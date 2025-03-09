@@ -4,6 +4,8 @@ import 'package:antlr4/antlr4.dart';
 
 import 'StellaParserListener.dart';
 import 'StellaParserBaseListener.dart';
+import 'StellaParserVisitor.dart';
+import 'StellaParserBaseVisitor.dart';
 const int RULE_start_Program = 0, RULE_start_Expr = 1, RULE_start_Type = 2, 
           RULE_program = 3, RULE_languageDecl = 4, RULE_extension = 5, RULE_declaration = 6, 
           RULE_annotation = 7, RULE_paramDeclaration = 8, RULE_expression = 9, 
@@ -2669,6 +2671,14 @@ class Start_ProgramContext extends ParserRuleContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitStart_Program(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitStart_Program(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class Start_ExprContext extends ParserRuleContext {
@@ -2686,6 +2696,14 @@ class Start_ExprContext extends ParserRuleContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitStart_Expr(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitStart_Expr(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class Start_TypeContext extends ParserRuleContext {
@@ -2702,6 +2720,14 @@ class Start_TypeContext extends ParserRuleContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitStart_Type(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitStart_Type(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -2725,6 +2751,14 @@ class ProgramContext extends ParserRuleContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitProgram(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitProgram(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -2789,6 +2823,14 @@ class ParamDeclarationContext extends ParserRuleContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitParamDeclaration(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitParamDeclaration(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class ExpressionContext extends ParserRuleContext {
@@ -2819,6 +2861,14 @@ class PatternBindingContext extends ParserRuleContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternBinding(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternBinding(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class BindingContext extends ParserRuleContext {
@@ -2838,6 +2888,14 @@ class BindingContext extends ParserRuleContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitBinding(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitBinding(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class MatchCaseContext extends ParserRuleContext {
@@ -2856,6 +2914,14 @@ class MatchCaseContext extends ParserRuleContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitMatchCase(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitMatchCase(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -2887,6 +2953,14 @@ class LabelledPatternContext extends ParserRuleContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitLabelledPattern(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitLabelledPattern(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class StellatypeContext extends ParserRuleContext {
@@ -2917,6 +2991,14 @@ class RecordFieldTypeContext extends ParserRuleContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitRecordFieldType(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitRecordFieldType(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class VariantFieldTypeContext extends ParserRuleContext {
@@ -2936,6 +3018,14 @@ class VariantFieldTypeContext extends ParserRuleContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitVariantFieldType(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitVariantFieldType(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class LanguageCoreContext extends LanguageDeclContext {
@@ -2950,6 +3040,14 @@ class LanguageCoreContext extends LanguageDeclContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitLanguageCore(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitLanguageCore(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }class AnExtensionContext extends ExtensionContext {
   Token? _ExtensionName;
@@ -2970,6 +3068,14 @@ class LanguageCoreContext extends LanguageDeclContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitAnExtension(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitAnExtension(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }class DeclTypeAliasContext extends DeclarationContext {
   Token? name;
   StellatypeContext? atype;
@@ -2985,6 +3091,14 @@ class LanguageCoreContext extends LanguageDeclContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitDeclTypeAlias(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitDeclTypeAlias(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3002,6 +3116,14 @@ class DeclExceptionTypeContext extends DeclarationContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitDeclExceptionType(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitDeclExceptionType(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3046,6 +3168,14 @@ class DeclFunContext extends DeclarationContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitDeclFun(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitDeclFun(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class DeclExceptionVariantContext extends DeclarationContext {
@@ -3064,6 +3194,14 @@ class DeclExceptionVariantContext extends DeclarationContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitDeclExceptionVariant(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitDeclExceptionVariant(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3114,6 +3252,14 @@ class DeclFunGenericContext extends DeclarationContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitDeclFunGeneric(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitDeclFunGeneric(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }class InlineAnnotationContext extends AnnotationContext {
   TerminalNode? Surrogate_id_SYMB_48() => getToken(StellaParser.TOKEN_Surrogate_id_SYMB_48, 0);
   InlineAnnotationContext(AnnotationContext ctx) { copyFrom(ctx); }
@@ -3124,6 +3270,14 @@ class DeclFunGenericContext extends DeclarationContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitInlineAnnotation(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitInlineAnnotation(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }class FoldContext extends ExpressionContext {
   StellatypeContext? type_;
@@ -3142,6 +3296,14 @@ class DeclFunGenericContext extends DeclarationContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitFold(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitFold(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class AddContext extends ExpressionContext {
@@ -3158,6 +3320,14 @@ class AddContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitAdd(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitAdd(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3176,6 +3346,14 @@ class IsZeroContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitIsZero(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitIsZero(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class VarContext extends ExpressionContext {
@@ -3189,6 +3367,14 @@ class VarContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitVar(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitVar(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3213,6 +3399,14 @@ class TypeAbstractionContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeAbstraction(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeAbstraction(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class DivideContext extends ExpressionContext {
@@ -3229,6 +3423,14 @@ class DivideContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitDivide(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitDivide(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3247,6 +3449,14 @@ class LessThanContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitLessThan(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitLessThan(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class DotRecordContext extends ExpressionContext {
@@ -3263,6 +3473,14 @@ class DotRecordContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitDotRecord(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitDotRecord(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3281,6 +3499,14 @@ class GreaterThanContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitGreaterThan(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitGreaterThan(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class EqualContext extends ExpressionContext {
@@ -3297,6 +3523,14 @@ class EqualContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitEqual(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitEqual(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3315,6 +3549,14 @@ class ThrowContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitThrow(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitThrow(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class MultiplyContext extends ExpressionContext {
@@ -3332,6 +3574,14 @@ class MultiplyContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitMultiply(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitMultiply(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class ConstMemoryContext extends ExpressionContext {
@@ -3345,6 +3595,14 @@ class ConstMemoryContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitConstMemory(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitConstMemory(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3365,6 +3623,14 @@ class ListContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitList(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitList(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3390,6 +3656,14 @@ class TryCatchContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTryCatch(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTryCatch(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3421,6 +3695,14 @@ class TryCastAsContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTryCastAs(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTryCastAs(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class HeadContext extends ExpressionContext {
@@ -3438,6 +3720,14 @@ class HeadContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitHead(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitHead(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class TerminatingSemicolonContext extends ExpressionContext {
@@ -3452,6 +3742,14 @@ class TerminatingSemicolonContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTerminatingSemicolon(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTerminatingSemicolon(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3470,6 +3768,14 @@ class NotEqualContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitNotEqual(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitNotEqual(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class ConstUnitContext extends ExpressionContext {
@@ -3482,6 +3788,14 @@ class ConstUnitContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitConstUnit(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitConstUnit(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3500,6 +3814,14 @@ class SequenceContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitSequence(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitSequence(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class ConstFalseContext extends ExpressionContext {
@@ -3512,6 +3834,14 @@ class ConstFalseContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitConstFalse(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitConstFalse(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3539,6 +3869,14 @@ class AbstractionContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitAbstraction(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitAbstraction(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class ConstIntContext extends ExpressionContext {
@@ -3552,6 +3890,14 @@ class ConstIntContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitConstInt(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitConstInt(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3572,6 +3918,14 @@ class VariantContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitVariant(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitVariant(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class ConstTrueContext extends ExpressionContext {
@@ -3584,6 +3938,14 @@ class ConstTrueContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitConstTrue(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitConstTrue(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3602,6 +3964,14 @@ class SubtractContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitSubtract(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitSubtract(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class TypeCastContext extends ExpressionContext {
@@ -3619,6 +3989,14 @@ class TypeCastContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeCast(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeCast(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3639,6 +4017,14 @@ class IfContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitIf(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitIf(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3661,6 +4047,14 @@ class ApplicationContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitApplication(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitApplication(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class DerefContext extends ExpressionContext {
@@ -3675,6 +4069,14 @@ class DerefContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitDeref(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitDeref(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3693,6 +4095,14 @@ class IsEmptyContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitIsEmpty(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitIsEmpty(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class PanicContext extends ExpressionContext {
@@ -3705,6 +4115,14 @@ class PanicContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPanic(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPanic(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3723,6 +4141,14 @@ class LessThanOrEqualContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitLessThanOrEqual(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitLessThanOrEqual(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class SuccContext extends ExpressionContext {
@@ -3739,6 +4165,14 @@ class SuccContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitSucc(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitSucc(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3757,6 +4191,14 @@ class InlContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitInl(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitInl(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class GreaterThanOrEqualContext extends ExpressionContext {
@@ -3774,6 +4216,14 @@ class GreaterThanOrEqualContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitGreaterThanOrEqual(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitGreaterThanOrEqual(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class InrContext extends ExpressionContext {
@@ -3790,6 +4240,14 @@ class InrContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitInr(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitInr(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3814,6 +4272,14 @@ class MatchContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitMatch(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitMatch(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class LogicNotContext extends ExpressionContext {
@@ -3831,6 +4297,14 @@ class LogicNotContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitLogicNot(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitLogicNot(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class ParenthesisedExprContext extends ExpressionContext {
@@ -3846,6 +4320,14 @@ class ParenthesisedExprContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitParenthesisedExpr(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitParenthesisedExpr(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3863,6 +4345,14 @@ class TailContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTail(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTail(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3884,6 +4374,14 @@ class RecordContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitRecord(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitRecord(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class LogicAndContext extends ExpressionContext {
@@ -3900,6 +4398,14 @@ class LogicAndContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitLogicAnd(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitLogicAnd(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3923,6 +4429,14 @@ class TypeApplicationContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeApplication(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeApplication(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class LetRecContext extends ExpressionContext {
@@ -3945,6 +4459,14 @@ class LetRecContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitLetRec(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitLetRec(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class LogicOrContext extends ExpressionContext {
@@ -3961,6 +4483,14 @@ class LogicOrContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitLogicOr(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitLogicOr(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -3984,6 +4514,14 @@ class TryWithContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTryWith(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTryWith(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class PredContext extends ExpressionContext {
@@ -4001,6 +4539,14 @@ class PredContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPred(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPred(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class TypeAscContext extends ExpressionContext {
@@ -4017,6 +4563,14 @@ class TypeAscContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeAsc(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeAsc(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4040,6 +4594,14 @@ class NatRecContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitNatRec(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitNatRec(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class UnfoldContext extends ExpressionContext {
@@ -4059,6 +4621,14 @@ class UnfoldContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitUnfold(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitUnfold(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class RefContext extends ExpressionContext {
@@ -4073,6 +4643,14 @@ class RefContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitRef(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitRef(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4091,6 +4669,14 @@ class DotTupleContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitDotTuple(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitDotTuple(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class FixContext extends ExpressionContext {
@@ -4107,6 +4693,14 @@ class FixContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitFix(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitFix(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4130,6 +4724,14 @@ class LetContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitLet(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitLet(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class AssignContext extends ExpressionContext {
@@ -4146,6 +4748,14 @@ class AssignContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitAssign(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitAssign(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4167,6 +4777,14 @@ class TupleContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTuple(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTuple(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class ConsListContext extends ExpressionContext {
@@ -4187,6 +4805,14 @@ class ConsListContext extends ExpressionContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitConsList(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitConsList(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }class PatternConsContext extends PatternContext {
   PatternContext? head;
   PatternContext? tail;
@@ -4204,6 +4830,14 @@ class ConsListContext extends ExpressionContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternCons(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternCons(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4225,6 +4859,14 @@ class PatternTupleContext extends PatternContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternTuple(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternTuple(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class PatternListContext extends PatternContext {
@@ -4244,6 +4886,14 @@ class PatternListContext extends PatternContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternList(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternList(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4265,6 +4915,14 @@ class PatternRecordContext extends PatternContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternRecord(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternRecord(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class PatternVariantContext extends PatternContext {
@@ -4284,6 +4942,14 @@ class PatternVariantContext extends PatternContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternVariant(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternVariant(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class PatternAscContext extends PatternContext {
@@ -4301,6 +4967,14 @@ class PatternAscContext extends PatternContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternAsc(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternAsc(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class PatternIntContext extends PatternContext {
@@ -4314,6 +4988,14 @@ class PatternIntContext extends PatternContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternInt(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternInt(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4332,6 +5014,14 @@ class PatternInrContext extends PatternContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternInr(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternInr(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class PatternTrueContext extends PatternContext {
@@ -4344,6 +5034,14 @@ class PatternTrueContext extends PatternContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternTrue(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternTrue(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4362,6 +5060,14 @@ class PatternInlContext extends PatternContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternInl(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternInl(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class PatternVarContext extends PatternContext {
@@ -4375,6 +5081,14 @@ class PatternVarContext extends PatternContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternVar(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternVar(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4391,6 +5105,14 @@ class ParenthesisedPatternContext extends PatternContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitParenthesisedPattern(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitParenthesisedPattern(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4409,6 +5131,14 @@ class PatternSuccContext extends PatternContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternSucc(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternSucc(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class PatternFalseContext extends PatternContext {
@@ -4422,6 +5152,14 @@ class PatternFalseContext extends PatternContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternFalse(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternFalse(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class PatternUnitContext extends PatternContext {
@@ -4434,6 +5172,14 @@ class PatternUnitContext extends PatternContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternUnit(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternUnit(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4453,6 +5199,14 @@ class PatternCastAsContext extends PatternContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitPatternCastAs(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitPatternCastAs(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }class TypeTupleContext extends StellatypeContext {
   StellatypeContext? _stellatype;
   var types = <StellatypeContext>[];
@@ -4471,6 +5225,14 @@ class PatternCastAsContext extends PatternContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeTuple(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeTuple(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class TypeTopContext extends StellatypeContext {
@@ -4484,6 +5246,14 @@ class TypeTopContext extends StellatypeContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeTop(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeTop(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class TypeBoolContext extends StellatypeContext {
@@ -4496,6 +5266,14 @@ class TypeBoolContext extends StellatypeContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeBool(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeBool(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4511,6 +5289,14 @@ class TypeRefContext extends StellatypeContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeRef(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeRef(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4530,6 +5316,14 @@ class TypeRecContext extends StellatypeContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeRec(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeRec(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class TypeAutoContext extends StellatypeContext {
@@ -4542,6 +5336,14 @@ class TypeAutoContext extends StellatypeContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeAuto(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeAuto(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4560,6 +5362,14 @@ class TypeSumContext extends StellatypeContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeSum(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeSum(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class TypeVarContext extends StellatypeContext {
@@ -4573,6 +5383,14 @@ class TypeVarContext extends StellatypeContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeVar(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeVar(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4594,6 +5412,14 @@ class TypeVariantContext extends StellatypeContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeVariant(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeVariant(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class TypeUnitContext extends StellatypeContext {
@@ -4606,6 +5432,14 @@ class TypeUnitContext extends StellatypeContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeUnit(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeUnit(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4620,6 +5454,14 @@ class TypeNatContext extends StellatypeContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeNat(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeNat(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class TypeBottomContext extends StellatypeContext {
@@ -4632,6 +5474,14 @@ class TypeBottomContext extends StellatypeContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeBottom(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeBottom(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4648,6 +5498,14 @@ class TypeParensContext extends StellatypeContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeParens(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeParens(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4672,6 +5530,14 @@ class TypeFunContext extends StellatypeContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeFun(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeFun(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class TypeForAllContext extends StellatypeContext {
@@ -4691,6 +5557,14 @@ class TypeForAllContext extends StellatypeContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeForAll(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeForAll(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
 
@@ -4712,6 +5586,14 @@ class TypeRecordContext extends StellatypeContext {
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeRecord(this);
   }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeRecord(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
+  }
 }
 
 class TypeListContext extends StellatypeContext {
@@ -4727,5 +5609,13 @@ class TypeListContext extends StellatypeContext {
   @override
   void exitRule(ParseTreeListener listener) {
     if (listener is StellaParserListener) listener.exitTypeList(this);
+  }
+  @override
+  T? accept<T>(ParseTreeVisitor<T> visitor) {
+    if (visitor is StellaParserVisitor<T>) {
+     return visitor.visitTypeList(this);
+    } else {
+    	return visitor.visitChildren(this);
+    }
   }
 }
