@@ -1,24 +1,54 @@
-import 'package:satchel/src/type_checker/stella_types_context.dart';
-
 import '../antlr/StellaParser.dart';
 import '../antlr/StellaParserBaseVisitor.dart';
+import 'stella_types.dart';
 
 class StellaTypesContextCollectorVisitor
-    extends StellaParserBaseVisitor<StellaTypesContext> {
+    extends StellaParserBaseVisitor<StellaType> {
   @override
-  StellaTypesContext defaultResult() {
+  StellaType defaultResult() {
     return StellaTypesContext.root();
   }
 
   @override
-  StellaTypesContext? aggregateResult(
-    StellaTypesContext? aggregate,
-    StellaTypesContext? nextResult,
-  ) =>
-      aggregate?.merge(nextResult);
+  StellaType? aggregateResult(
+    StellaType? aggregate,
+    StellaType? nextResult,
+  ) {
+    return nextResult ?? nextResult;
+  }
+      
+  @override
+  StellaType visitTypeBool(TypeBoolContext ctx){
+    return const Bool();
+  }
 
   @override
-  StellaTypesContext? visitDeclFun(DeclFunContext ctx) {
+  StellaType visitTypeNat(TypeNatContext ctx){
+    return const Nat();
+  }
+
+  @override
+  StellaType visitTypeRef(TypeRefContext ctx) {
+    return TypeRef(
+      type: ctx.type_!.accept(this)!,
+    );
+  }
+
+  @override
+  StellaType visitTypeSum(TypeSumContext ctx) {
+    return TypeSum(
+      left: ctx.left?.accept(this),
+      right: ctx.right?.accept(this),
+    );
+  }
+
+  @override
+  StellaType visitTypeTuple(TypeTupleContext ctx) {
+    throw UnimplementedError();
+  }
+
+  @override
+  StellaType? visitDeclFun(DeclFunContext ctx) {
     throw UnimplementedError();
   }
 }
