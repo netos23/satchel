@@ -16,17 +16,17 @@ class TypeRef extends StellaType {
   final StellaType type;
 
   const TypeRef({
-    required this.type;
+    required this.type,
   });
 }
 
 class TypeSum extends StellaType {
   final StellaType left;
-  final StellaType rigth;
+  final StellaType right;
 
   const TypeSum({
-    required this.left;
-    required this.right;
+    required this.left,
+    required this.right,
   });
 }
 
@@ -45,7 +45,7 @@ class TypeRecord extends StellaType {
   final Map<String, StellaType> types;
 
   const TypeRecord({
-    this.types,
+    required this.types,
   });
 }
 
@@ -53,7 +53,7 @@ class TypeVariant extends StellaType {
   final Map<String, StellaType> types;
 
   const TypeVariant({
-    this.types,
+    required this.types,
   });
 }
 
@@ -61,7 +61,7 @@ class TypeList extends StellaType {
   final StellaType type;
 
   const TypeList({
-    required this.type;
+    required this.type,
   });
 }
 

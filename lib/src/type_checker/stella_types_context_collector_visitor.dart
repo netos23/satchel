@@ -5,25 +5,20 @@ import 'stella_types.dart';
 class StellaTypesContextCollectorVisitor
     extends StellaParserBaseVisitor<StellaType> {
   @override
-  StellaType defaultResult() {
-    return StellaTypesContext.root();
-  }
-
-  @override
   StellaType? aggregateResult(
     StellaType? aggregate,
     StellaType? nextResult,
   ) {
-    return nextResult ?? nextResult;
+    return nextResult ?? aggregate;
   }
-      
+
   @override
-  StellaType visitTypeBool(TypeBoolContext ctx){
+  StellaType visitTypeBool(TypeBoolContext ctx) {
     return const Bool();
   }
 
   @override
-  StellaType visitTypeNat(TypeNatContext ctx){
+  StellaType visitTypeNat(TypeNatContext ctx) {
     return const Nat();
   }
 
@@ -37,14 +32,26 @@ class StellaTypesContextCollectorVisitor
   @override
   StellaType visitTypeSum(TypeSumContext ctx) {
     return TypeSum(
-      left: ctx.left?.accept(this),
-      right: ctx.right?.accept(this),
+      left: ctx.left!.accept(this)!,
+      right: ctx.right!.accept(this)!,
     );
   }
 
   @override
   StellaType visitTypeTuple(TypeTupleContext ctx) {
-    throw UnimplementedError();
+    return TypeTuple(
+      types: ctx.types
+          .map((ctx) => ctx.accept(this))
+          .whereType<StellaType>()
+          .toList(),
+    );
+  }
+
+  @override
+  StellaType visitTypeRecord(TypeRecordContext ctx) {
+    return TypeRecord(types: {
+      for (final t in ctx.fieldTypes) t.label!.text!: t.type_!.accept(this)!,
+    });
   }
 
   @override
