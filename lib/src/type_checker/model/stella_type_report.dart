@@ -74,11 +74,13 @@ class UnknownTypeReport extends StellaTypeReport {
 }
 
 class ErrorTypeReport extends StellaTypeReport {
+  final String? errorCode;
   final String? message;
   final StellaTypeReport? cause;
 
   const ErrorTypeReport({
     required super.typesContext,
+    this.errorCode,
     this.cause,
     this.message,
   });
