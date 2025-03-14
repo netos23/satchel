@@ -1,7 +1,22 @@
 import 'package:collection/collection.dart';
 
-sealed class StellaType {
+interface class TypeMatcher {
+
+}
+
+
+class Wildcard implements TypeMatcher {
+
+}
+
+
+
+sealed class StellaType implements TypeMatcher {
   const StellaType();
+
+  StellaType operator >>(StellaType to) {
+    return Func(args: [this], returnType: to);
+  }
 
   @override
   bool operator ==(Object other) =>

@@ -7,6 +7,12 @@ class StellaTypesContext {
 
   const StellaTypesContext([this._types = const {}]);
 
+  factory StellaTypesContext.single(String name, StellaType type) {
+    return StellaTypesContext({
+      name: type,
+    });
+  }
+
   void registerStellaType(String name, StellaType type) {
     _types[name] = type;
   }
@@ -29,10 +35,10 @@ class StellaTypesContext {
     );
   }
 
-  StellaTypesContext? merge(StellaTypesContext? nextResult) {
+  StellaTypesContext? merge(StellaTypesContext? other) {
     final typesMap = {
       ..._types,
-      ...?nextResult?._types,
+      ...?other?._types,
     };
 
     return StellaTypesContext(typesMap);

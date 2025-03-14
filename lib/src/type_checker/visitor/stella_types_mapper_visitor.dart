@@ -1,10 +1,8 @@
-import '../antlr/StellaParser.dart';
-import '../antlr/StellaParserBaseVisitor.dart';
-import 'stella_types.dart';
+import '../../antlr/StellaParser.dart';
+import '../../antlr/StellaParserBaseVisitor.dart';
+import '../model/stella_types.dart';
 
-class StellaTypesMapperVisitor
-    extends StellaParserBaseVisitor<StellaType> {
-
+class StellaTypesMapperVisitor extends StellaParserBaseVisitor<StellaType> {
   @override
   StellaType? aggregateResult(
     StellaType? aggregate,

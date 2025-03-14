@@ -1,9 +1,8 @@
-import 'package:satchel/src/type_checker/stella_types.dart';
-
-import '../antlr/StellaParser.dart';
-import '../antlr/StellaParserBaseVisitor.dart';
-import 'stella_type_report.dart';
-import 'stella_types_context.dart';
+import '../../antlr/StellaParser.dart';
+import '../../antlr/StellaParserBaseVisitor.dart';
+import '../model/stella_type_report.dart';
+import '../model/stella_types.dart';
+import '../model/stella_types_context.dart';
 
 typedef ContextBuilder = StellaTypeReport? Function(StellaTypesContext);
 
@@ -11,6 +10,14 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   StellaTypesContext context;
 
   StellaTypeVisitor(this.context);
+
+  @override
+  StellaTypeReport? aggregateResult(
+    StellaTypeReport? aggregate,
+    StellaTypeReport? nextResult,
+  ) {
+    return aggregate ?? nextResult;
+  }
 
   StellaTypeReport? withContext(ContextBuilder builder) {
     final originalContext = context;
@@ -121,9 +128,9 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   /// Return [Bool]
   @override
   StellaTypeReport visitIsZero(IsZeroContext ctx) {
-    final expReport = ctx.n?.accept(this);
+    final expReport = ctx.n!.accept(this)!;
 
-    if (expReport != null && !expReport.hasType(const Nat())) {
+    if (!expReport.hasType(const Nat())) {
       return ErrorTypeReport(
         typesContext: context.clone(),
         cause: expReport,
@@ -136,6 +143,39 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     );
   }
 
+  /// T-NatRec rule
+  /// Expect [Nat] at counter expression
+  /// Expect [T] at init expression
+  /// Expect [Func] of [Nat] -> ( [T] -> [T]) at counter expression
+  /// Return [Bool]
+  @override
+  StellaTypeReport? visitNatRec(NatRecContext ctx) {
+    final counterReport = ctx.n!.accept(this)!;
 
+    if (!counterReport.hasType(const Nat())) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        cause: counterReport,
+      );
+    }
 
+    final initReport = ctx.initial!.accept(this)!;
+    final stepReport = ctx.step!.accept(this)!;
+
+    return switch (initReport) {
+      GotTypeReport(:final type) => stepReport.hasType(Nat() >> (type >> type))
+          ? GotTypeReport(typesContext: context.clone(), type: type)
+          : ErrorTypeReport(
+              typesContext: context.clone(),
+              cause: initReport,
+            ),
+      UnknownTypeReport() => UnknownTypeReport(
+          typesContext: context.clone(),
+        ),
+      ErrorTypeReport() => ErrorTypeReport(
+          typesContext: context.clone(),
+          cause: initReport,
+        ),
+    };
+  }
 }
