@@ -6,6 +6,12 @@ import '../antlr/StellaLexer.dart';
 import '../antlr/StellaParser.dart';
 import 'model/stella_type_report.dart';
 
+
+void ensureInitialized(){
+  StellaLexer.checkVersion();
+  StellaParser.checkVersion();
+}
+
 StellaTypeReport? buildStellaTypeReport(InputStream input) {
   final lexer = StellaLexer(input);
   final tokens = CommonTokenStream(lexer);
