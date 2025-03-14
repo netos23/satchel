@@ -8,8 +8,8 @@ import 'util.dart';
 
 void main() {
   group('Bad tests', () {
-    print(Directory.current);
-    const basePath = './test/stella-tests/bad';
+    final root = Directory.current.path;
+    final basePath = '$root/test/stella-tests/bad';
     final dir = Directory(basePath);
 
     setUpAll(() {
