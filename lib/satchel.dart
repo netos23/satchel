@@ -1,5 +1,7 @@
 library;
 
-export 'src/antlr/StellaLexer.dart';
-export 'src/antlr/StellaParser.dart';
-export 'src/antlr/StellaParserBaseListener.dart';
+
+export 'src/type_checker/model/stella_type_report.dart';
+export 'src/type_checker/model/stella_types.dart';
+export 'src/type_checker/model/stella_types_context.dart';
+export 'src/type_checker/type_checker.dart';
