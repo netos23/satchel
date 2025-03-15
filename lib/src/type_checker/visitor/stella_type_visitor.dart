@@ -56,7 +56,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   StellaTypeReport visitIf(IfContext ctx) {
     final conditionReport = ctx.condition!.accept(this)!;
 
-    if (conditionReport.hasType(const Bool())) {
+    if (!conditionReport.hasType(const Bool())) {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedTypeForExpression,
@@ -68,7 +68,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     }
 
     final thenReport = ctx.thenExpr?.accept(this);
-    final elseReport = ctx.thenExpr?.accept(this);
+    final elseReport = ctx.elseExpr?.accept(this);
 
     return switch ((thenReport, elseReport)) {
       (StellaTypeReport then, StellaTypeReport elze) =>
@@ -203,5 +203,15 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           cause: initReport,
         ),
     };
+  }
+
+  /// T-Unit rule
+  /// Always return [Unit]
+  @override
+  StellaTypeReport visitConstUnit(ConstUnitContext ctx) {
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: const Unit(),
+    );
   }
 }
