@@ -1,15 +1,8 @@
 import 'package:collection/collection.dart';
 
-interface class TypeMatcher {
+interface class TypeMatcher {}
 
-}
-
-
-class Wildcard implements TypeMatcher {
-
-}
-
-
+class Wildcard implements TypeMatcher {}
 
 sealed class StellaType implements TypeMatcher {
   const StellaType();
@@ -77,12 +70,14 @@ class TypeSum extends StellaType {
 }
 
 class Func extends StellaType {
+  final String? name;
   final List<StellaType> args;
   final StellaType returnType;
 
   const Func({
     required this.args,
     required this.returnType,
+    this.name,
   });
 
   @override
@@ -96,6 +91,8 @@ class Func extends StellaType {
 
   @override
   int get hashCode => super.hashCode ^ args.hashCode ^ returnType.hashCode;
+
+  bool get lambda => name == null;
 }
 
 class TypeForAll extends StellaType {
@@ -249,21 +246,4 @@ class TypeVar extends StellaType {
 
   @override
   int get hashCode => super.hashCode ^ name.hashCode;
-}
-
-class TypeParens extends StellaType {
-  final StellaType type;
-
-  const TypeParens(this.type);
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      super == other &&
-          other is TypeParens &&
-          runtimeType == other.runtimeType &&
-          type == other.type;
-
-  @override
-  int get hashCode => super.hashCode ^ type.hashCode;
 }

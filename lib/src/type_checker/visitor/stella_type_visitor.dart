@@ -21,6 +21,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     StellaTypeReport? aggregate,
     StellaTypeReport? nextResult,
   ) {
+    if(nextResult is ErrorTypeReport){
+      return nextResult;
+    }
+
     return aggregate ?? nextResult;
   }
 
@@ -59,27 +63,30 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   StellaTypeReport visitIf(IfContext ctx) {
     final conditionReport = ctx.condition!.accept(this)!;
 
+    final thenReport = ctx.thenExpr!.accept(this)!;
+    final elseReport = ctx.elseExpr!.accept(this)!;
+
     if (!conditionReport.hasType(const Bool())) {
       return ErrorTypeReport(
         typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedTypeForExpression,
-        message: conditionReport
-            .tryAs<GotTypeReport>()
-            ?.let((it) => 'Expected type Bool, but got ${it.type}'),
+        errorCode: StellaTypeError.unexpectedExpression(
+          expected: const Bool(),
+          actual: conditionReport.tryAs<GotTypeReport>()?.type,
+        ),
+        message: 'Expected type Bool, but got ${conditionReport.typeOrNull}',
         cause: conditionReport,
+        recoveryType: thenReport.typeOrNull ?? elseReport.typeOrNull,
       );
     }
 
-    final thenReport = ctx.thenExpr?.accept(this);
-    final elseReport = ctx.elseExpr?.accept(this);
+    if (conditionReport is ErrorTypeReport) {
+      return conditionReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: thenReport.typeOrNull ?? elseReport.typeOrNull,
+      );
+    }
 
-    return switch ((thenReport, elseReport)) {
-      (StellaTypeReport then, StellaTypeReport elze) =>
-        then.inferTypeReport(elze, context.clone()),
-      (StellaTypeReport then, null) => then,
-      (null, StellaTypeReport elze) => elze,
-      (_, _) => UnknownTypeReport(typesContext: context.clone()),
-    };
+    return thenReport.inferTypeReport(elseReport, context.clone());
   }
 
   /// T-Nat rule
@@ -97,16 +104,25 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   /// Return [Nat]
   @override
   StellaTypeReport visitSucc(SuccContext ctx) {
-    final expReport = ctx.n?.accept(this);
+    final expReport = ctx.n!.accept(this)!;
 
-    if (expReport != null && !expReport.hasType(const Nat())) {
+    if (!expReport.hasType(const Nat())) {
       return ErrorTypeReport(
         typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedTypeForExpression,
-        message: expReport
-            .tryAs<GotTypeReport>()
-            ?.let((it) => 'Expected type Nat, but got ${it.type}'),
+        errorCode: StellaTypeError.unexpectedExpression(
+          expected: const Nat(),
+          actual: expReport.tryAs<GotTypeReport>()?.type,
+        ),
+        message: 'Expected type Nat, but got ${expReport.typeOrNull}',
         cause: expReport,
+        recoveryType: const Nat(),
+      );
+    }
+
+    if (expReport is ErrorTypeReport) {
+      return expReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: const Nat(),
       );
     }
 
@@ -121,16 +137,25 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   /// Return [Nat]
   @override
   StellaTypeReport visitPred(PredContext ctx) {
-    final expReport = ctx.n?.accept(this);
+    final expReport = ctx.n!.accept(this)!;
 
-    if (expReport != null && !expReport.hasType(const Nat())) {
+    if (!expReport.hasType(const Nat())) {
       return ErrorTypeReport(
         typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedTypeForExpression,
-        message: expReport
-            .tryAs<GotTypeReport>()
-            ?.let((it) => 'Expected type Nat, but got ${it.type}'),
+        errorCode: StellaTypeError.unexpectedExpression(
+          expected: const Nat(),
+          actual: expReport.tryAs<GotTypeReport>()?.type,
+        ),
+        message: 'Expected type Nat, but got ${expReport.typeOrNull}',
         cause: expReport,
+        recoveryType: const Nat(),
+      );
+    }
+
+    if (expReport is ErrorTypeReport) {
+      return expReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: const Nat(),
       );
     }
 
@@ -150,11 +175,20 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     if (!expReport.hasType(const Nat())) {
       return ErrorTypeReport(
         typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedTypeForExpression,
-        message: expReport
-            .tryAs<GotTypeReport>()
-            ?.let((it) => 'Expected type Nat, but got ${it.type}'),
+        errorCode: StellaTypeError.unexpectedExpression(
+          expected: const Nat(),
+          actual: expReport.tryAs<GotTypeReport>()?.type,
+        ),
+        message: 'Expected type Nat, but got ${expReport.typeOrNull}',
         cause: expReport,
+        recoveryType: const Bool(),
+      );
+    }
+
+    if (expReport is ErrorTypeReport) {
+      return expReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: const Bool(),
       );
     }
 
@@ -172,32 +206,56 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   @override
   StellaTypeReport? visitNatRec(NatRecContext ctx) {
     final counterReport = ctx.n!.accept(this)!;
+    final initReport = ctx.initial!.accept(this)!;
+    final stepReport = ctx.step!.accept(this)!;
 
     if (!counterReport.hasType(const Nat())) {
       return ErrorTypeReport(
         typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedTypeForExpression,
-        message: counterReport
-            .tryAs<GotTypeReport>()
-            ?.let((it) => 'Expected type Nat, but got ${it.type}'),
+        errorCode: StellaTypeError.unexpectedExpression(
+          expected: const Nat(),
+          actual: counterReport.tryAs<GotTypeReport>()?.type,
+        ),
+        message: 'Expected type Nat, but got ${counterReport.typeOrNull}',
         cause: counterReport,
+        recoveryType: initReport.typeOrNull,
       );
     }
 
-    final initReport = ctx.initial!.accept(this)!;
-    final stepReport = ctx.step!.accept(this)!;
+    if (counterReport is ErrorTypeReport) {
+      return counterReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: initReport.typeOrNull,
+      );
+    }
 
-    return switch (initReport) {
-      GotTypeReport(:final type) => stepReport.hasType(Nat() >> (type >> type))
-          ? GotTypeReport(typesContext: context.clone(), type: type)
-          : ErrorTypeReport(
-              typesContext: context.clone(),
-              errorCode: StellaTypeError.unexpectedTypeForExpression,
-              message: counterReport.tryAs<GotTypeReport>()?.let((it) =>
-                  'Expected type Nat -> ($type -> $type), but got ${it.type}'),
-              cause: initReport,
-            ),
-      _ => initReport,
+    return switch ((initReport, stepReport)) {
+      (GotTypeReport(:final type), GotTypeReport()) =>
+        stepReport.hasType(Nat() >> (type >> type))
+            ? GotTypeReport(
+                typesContext: context.clone(),
+                type: type,
+              )
+            : ErrorTypeReport(
+                typesContext: context.clone(),
+                errorCode: StellaTypeError.unexpectedExpression(
+                  expected: Nat() >> (type >> type),
+                  actual: stepReport.tryAs<GotTypeReport>()?.type,
+                ),
+                message: 'Expected type Nat -> ($type -> $type), '
+                    'but got ${stepReport.typeOrNull}',
+                cause: initReport,
+                recoveryType: initReport.typeOrNull,
+              ),
+      (GotTypeReport(:final type), ErrorTypeReport()) =>
+        (stepReport as ErrorTypeReport).copyWith(
+          typesContext: context.clone(),
+          recoveryType: type,
+        ),
+      (ErrorTypeReport(), _) => (initReport as ErrorTypeReport).copyWith(
+          typesContext: context.clone(),
+          recoveryType: initReport.typeOrNull,
+        ),
     };
   }
 
@@ -251,17 +309,35 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       if (!retExp.hasType(type.returnType)) {
         return ErrorTypeReport(
           typesContext: context.clone(),
-          errorCode: StellaTypeError.unexpectedTypeForExpression,
-          message: retExp
-              .tryAs<GotTypeReport>()
-              ?.let((it) => 'Expected type Nat, but got ${type.returnType}'),
+          errorCode: StellaTypeError.unexpectedExpression(
+            expected: type.returnType,
+            actual: retExp.tryAs<GotTypeReport>()?.type,
+          ),
+          message: 'Expected type ${type.returnType}, '
+              'but got ${retExp.typeOrNull}',
           cause: retExp,
+          recoveryType: type,
+        );
+      }
+
+      if (retExp is ErrorTypeReport) {
+        return retExp.copyWith(
+          typesContext: context.clone(),
+          recoveryType: Func(
+            args: type.args,
+            returnType: type.returnType,
+            name: name,
+          ),
         );
       }
 
       return GotTypeReport(
         typesContext: context.clone(),
-        type: type,
+        type: Func(
+          args: type.args,
+          returnType: type.returnType,
+          name: name,
+        ),
       );
     });
   }
@@ -287,7 +363,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return switch (retExp) {
         GotTypeReport(:final type) => GotTypeReport(
             typesContext: context.clone(),
-            type: Func(args: argTypes.toList(), returnType: type),
+            type: Func(
+              args: argTypes.toList(),
+              returnType: type,
+            ),
           ),
         _ => retExp,
       };
@@ -305,9 +384,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     final type = funcReport.type;
     if (type is! Func) {
       return ErrorTypeReport(
-          typesContext: context.clone(),
-          errorCode: StellaTypeError.notAFunction,
-          message: 'Can`t apply arguments, to not a function type');
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.notAFunction,
+        message: 'Can`t apply arguments, to not a function type',
+      );
     }
 
     if (type.args.length != ctx.args.length) {
@@ -315,6 +395,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         typesContext: context.clone(),
         errorCode: StellaTypeError.incorrectNumberOfArguments,
         message: 'Expect ${type.args.length} args, but got ${ctx.args.length}',
+        recoveryType: type.returnType,
       );
     }
 
@@ -324,10 +405,14 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       if (!actualTypeReport.hasType(expected)) {
         return ErrorTypeReport(
           typesContext: context.clone(),
-          errorCode: StellaTypeError.unexpectedTypeForExpression,
+          errorCode: StellaTypeError.unexpectedExpression(
+            expected: expected,
+            actual: actualTypeReport.tryAs<GotTypeReport>()?.type,
+          ),
           message: actualTypeReport.tryAs<GotTypeReport>()?.let(
               (it) => 'Expected type $expected, but got ${type.returnType}'),
           cause: actualTypeReport,
+          recoveryType: type.returnType,
         );
       }
     }
