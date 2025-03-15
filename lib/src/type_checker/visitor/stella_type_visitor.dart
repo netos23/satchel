@@ -1,10 +1,13 @@
+import 'package:collection/collection.dart';
 import 'package:satchel/src/util/extensions.dart';
+import 'package:satchel/src/util/iterable.dart';
 
 import '../../antlr/StellaParser.dart';
 import '../../antlr/StellaParserBaseVisitor.dart';
 import '../model/stella_type_report.dart';
 import '../model/stella_types.dart';
 import '../model/stella_types_context.dart';
+import 'stella_types_mapper_visitor.dart';
 
 typedef ContextBuilder = StellaTypeReport? Function(StellaTypesContext);
 
@@ -194,14 +197,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
                   'Expected type Nat -> ($type -> $type), but got ${it.type}'),
               cause: initReport,
             ),
-      UnknownTypeReport() => UnknownTypeReport(
-          typesContext: context.clone(),
-        ),
-      ErrorTypeReport(:final errorCode) => ErrorTypeReport(
-          typesContext: context.clone(),
-          errorCode: errorCode,
-          cause: initReport,
-        ),
+      _ => initReport,
     };
   }
 
@@ -212,6 +208,133 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     return GotTypeReport(
       typesContext: context.clone(),
       type: const Unit(),
+    );
+  }
+
+  /// T-Var rule
+  /// Return var type if var in context, error otherwise
+  @override
+  StellaTypeReport visitVar(VarContext ctx) {
+    final name = ctx.name!.text!;
+
+    final type = context[name];
+
+    if (type == null) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.undefinedVariable,
+        message: 'Undefined variable $name',
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: type,
+    );
+  }
+
+  @override
+  StellaTypeReport? visitDeclFun(DeclFunContext ctx) {
+    return withContext((context) {
+      final name = ctx.name!.text!;
+      final type = context[name] as Func;
+
+      for (final (name, type) in ZipIterable(
+        ctx.paramDecls.map((a) => a.name!.text!),
+        type.args,
+      )) {
+        context[name] = type;
+      }
+
+      final retExp = ctx.returnExpr!.accept(this)!;
+
+      if (!retExp.hasType(type.returnType)) {
+        return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.unexpectedTypeForExpression,
+          message: retExp
+              .tryAs<GotTypeReport>()
+              ?.let((it) => 'Expected type Nat, but got ${type.returnType}'),
+          cause: retExp,
+        );
+      }
+
+      return GotTypeReport(
+        typesContext: context.clone(),
+        type: type,
+      );
+    });
+  }
+
+  @override
+  StellaTypeReport? visitAbstraction(AbstractionContext ctx) {
+    return withContext((context) {
+      var paramDecls = ctx.paramDecls;
+
+      final argNames = paramDecls.map(
+        (decl) => decl.name!.text!,
+      );
+      final argTypes = paramDecls.map(
+        (decl) => decl.paramType!.accept(StellaTypesMapperVisitor())!,
+      );
+
+      for (final (name, type) in ZipIterable(argNames, argTypes)) {
+        context[name] = type;
+      }
+
+      final retExp = ctx.returnExpr!.accept(this)!;
+
+      return switch (retExp) {
+        GotTypeReport(:final type) => GotTypeReport(
+            typesContext: context.clone(),
+            type: Func(args: argTypes.toList(), returnType: type),
+          ),
+        _ => retExp,
+      };
+    });
+  }
+
+  @override
+  StellaTypeReport? visitApplication(ApplicationContext ctx) {
+    final funcReport = ctx.fun?.accept(this);
+
+    if (funcReport is! GotTypeReport) {
+      return funcReport;
+    }
+
+    final type = funcReport.type;
+    if (type is! Func) {
+      return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.notAFunction,
+          message: 'Can`t apply arguments, to not a function type');
+    }
+
+    if (type.args.length != ctx.args.length) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.incorrectNumberOfArguments,
+        message: 'Expect ${type.args.length} args, but got ${ctx.args.length}',
+      );
+    }
+
+    for (final (expected, actual) in ZipIterable(type.args, ctx.args)) {
+      final actualTypeReport = actual.accept(this)!;
+
+      if (!actualTypeReport.hasType(expected)) {
+        return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.unexpectedTypeForExpression,
+          message: actualTypeReport.tryAs<GotTypeReport>()?.let(
+              (it) => 'Expected type $expected, but got ${type.returnType}'),
+          cause: actualTypeReport,
+        );
+      }
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: type.returnType,
     );
   }
 }
