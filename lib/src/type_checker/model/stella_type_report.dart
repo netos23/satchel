@@ -100,7 +100,8 @@ enum StellaTypeError implements Exception {
   unexpectedVariant('ERROR_UNEXPECTED_VARIANT'),
   unexpectedVariantLabel('ERROR_UNEXPECTED_VARIANT_LABEL'),
   duplicateVariantTypeFields('ERROR_DUPLICATE_VARIANT_TYPE_FIELDS'),
-  incorrectNumberOfArguments('ERROR_INCORRECT_NUMBER_OF_ARGUMENTS');
+  incorrectNumberOfArguments('ERROR_INCORRECT_NUMBER_OF_ARGUMENTS'),
+  incorrectArityOfMain('ERROR_INCORRECT_ARITY_OF_MAIN');
 
   final String code;
 

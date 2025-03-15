@@ -26,6 +26,15 @@ StellaTypeReport? buildStellaTypeReport(InputStream input) {
     return ErrorTypeReport(
       typesContext: context,
       errorCode: StellaTypeError.missingMain,
+      message: 'Missing main function',
+    );
+  }
+
+  if (entryPoint.args.singleOrNull == null) {
+    return ErrorTypeReport(
+      typesContext: context,
+      errorCode: StellaTypeError.incorrectArityOfMain,
+      message: 'Main function must have one param',
     );
   }
 
