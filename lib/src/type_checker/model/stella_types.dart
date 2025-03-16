@@ -158,7 +158,7 @@ class TypeTuple extends StellaType {
 }
 
 class TypeRecord extends StellaType {
-  final Map<String, StellaType> types;
+  final Map<String, StellaType?> types;
 
   const TypeRecord({
     required this.types,
@@ -170,7 +170,9 @@ class TypeRecord extends StellaType {
       super == other &&
           other is TypeRecord &&
           runtimeType == other.runtimeType &&
-          MapEquality().equals(types, other.types);
+          MapEquality(
+            values: const NullableEquality<StellaType?>(),
+          ).equals(types, other.types);
 
   @override
   int get hashCode => super.hashCode ^ types.hashCode;

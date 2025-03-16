@@ -19,24 +19,28 @@ StellaTypeReport? buildStellaTypeReport(InputStream input) {
   parser.addErrorListener(DiagnosticErrorListener());
 
   final root = parser.start_Program();
-  final context = root.accept(TopLevelFunctionVisitor())!;
+  try {
+    final context = root.accept(TopLevelFunctionVisitor())!;
 
-  final entryPoint = context['main'];
-  if (entryPoint is! Func) {
-    return ErrorTypeReport(
-      typesContext: context,
-      errorCode: StellaTypeError.missingMain,
-      message: 'Missing main function',
-    );
+    final entryPoint = context['main'];
+    if (entryPoint is! Func) {
+      return ErrorTypeReport(
+        typesContext: context,
+        errorCode: StellaTypeError.missingMain,
+        message: 'Missing main function',
+      );
+    }
+
+    if (entryPoint.args.singleOrNull == null) {
+      return ErrorTypeReport(
+        typesContext: context,
+        errorCode: StellaTypeError.incorrectArityOfMain,
+        message: 'Main function must have one param',
+      );
+    }
+
+    return root.accept(StellaTypeVisitor(context));
+  } on ErrorTypeReport catch (error) {
+    return error;
   }
-
-  if (entryPoint.args.singleOrNull == null) {
-    return ErrorTypeReport(
-      typesContext: context,
-      errorCode: StellaTypeError.incorrectArityOfMain,
-      message: 'Main function must have one param',
-    );
-  }
-
-  return root.accept(StellaTypeVisitor(context));
 }

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:satchel/src/type_checker/visitor/top_level_function_visitor.dart';
 import 'package:satchel/src/util/extensions.dart';
@@ -8,14 +10,13 @@ import '../../antlr/StellaParserBaseVisitor.dart';
 import '../model/stella_type_report.dart';
 import '../model/stella_types.dart';
 import '../model/stella_types_context.dart';
-import 'stella_types_mapper_visitor.dart';
 
 typedef ContextBuilder = StellaTypeReport? Function(StellaTypesContext);
 
 class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   StellaTypesContext context;
 
-  StellaTypeVisitor(this.context);
+  StellaTypeVisitor([this.context = const StellaTypesContext()]);
 
   @override
   StellaTypeReport? aggregateResult(
@@ -37,6 +38,249 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     context = originalContext;
 
     return res;
+  }
+
+  @override
+  StellaTypeReport visitTypeBool(TypeBoolContext ctx) {
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: const Bool(),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeNat(TypeNatContext ctx) {
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: const Nat(),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeRef(TypeRefContext ctx) {
+    final typeReport = ctx.type_!.accept(this)!;
+
+    if (typeReport is ErrorTypeReport) {
+      return typeReport;
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeRef(
+        type: typeReport.typeOrNull!,
+      ),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeSum(TypeSumContext ctx) {
+    final left = ctx.left!.accept(this)!;
+    final right = ctx.right!.accept(this)!;
+
+    if (left is ErrorTypeReport) {
+      return left;
+    }
+
+    if (right is ErrorTypeReport) {
+      return right;
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeSum(
+        left: left.typeOrNull!,
+        right: right.typeOrNull!,
+      ),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeFun(TypeFunContext ctx) {
+    final args = ctx.paramTypes
+        .map((ctx) => ctx.accept(this))
+        .whereType<StellaTypeReport>()
+        .toList();
+
+    if (args.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+      return error;
+    }
+
+    final returnType = ctx.returnType!.accept(this)!;
+
+    if (returnType is ErrorTypeReport) {
+      return returnType;
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: Func(
+        args: args.map((e) => e.typeOrNull).whereType<StellaType>().toList(),
+        returnType: returnType.typeOrNull!,
+      ),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeForAll(TypeForAllContext ctx) {
+    final typeReport = ctx.type_!.accept(this)!;
+
+    if (typeReport is ErrorTypeReport) {
+      return typeReport;
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeForAll(
+        types: ctx.types.map((t) => t.text).whereType<String>().toList(),
+        type: typeReport.typeOrNull!,
+      ),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeRec(TypeRecContext ctx) {
+    final typeReport = ctx.type_!.accept(this)!;
+
+    if (typeReport is ErrorTypeReport) {
+      return typeReport;
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeRec(
+        variable: ctx.var_!.text!,
+        type: typeReport.typeOrNull!,
+      ),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeTuple(TypeTupleContext ctx) {
+    final args = ctx.types
+        .map((ctx) => ctx.accept(this))
+        .whereType<StellaTypeReport>()
+        .toList();
+
+    if (args.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+      return error;
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeTuple(
+        types: args.map((c) => c.typeOrNull).whereType<StellaType>().toList(),
+      ),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeRecord(TypeRecordContext ctx) {
+    final labels = ctx.fieldTypes.map((f) => f.label!.text!).toList();
+    final types = ctx.fieldTypes.map((f) => f.type_!.accept(this)!).toList();
+
+    if (labels.toSet().length != labels.length) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.duplicateRecordTypeFields,
+      );
+    }
+
+    if (types.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+      return error;
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeRecord(
+        types: Map.fromIterables(
+          labels,
+          types.map((t) => t.typeOrNull).whereType<StellaType>().toList(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeVariant(TypeVariantContext ctx) {
+    final labels = ctx.fieldTypes.map((f) => f.label!.text!).toList();
+    final types = ctx.fieldTypes.map((f) => f.type_!.accept(this)!).toList();
+
+    if (labels.toSet().length != labels.length) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.duplicateVariantTypeFields,
+      );
+    }
+
+    if (types.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+      return error;
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeVariant(
+        types: Map.fromIterables(
+          labels,
+          types.map((t) => t.typeOrNull).whereType<StellaType>().toList(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeList(TypeListContext ctx) {
+    final typeReport = ctx.type_!.accept(this)!;
+
+    if (typeReport is ErrorTypeReport) {
+      return typeReport;
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeList(
+        type: typeReport.typeOrNull!,
+      ),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeUnit(TypeUnitContext ctx) {
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: const Unit(),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeTop(TypeTopContext ctx) {
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: const Top(),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeBottom(TypeBottomContext ctx) {
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: const Bottom(),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeAuto(TypeAutoContext ctx) {
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: const Auto(),
+    );
+  }
+
+  @override
+  StellaTypeReport visitTypeVar(TypeVarContext ctx) {
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeVar(ctx.name!.text!),
+    );
   }
 
   /// T-False rule
@@ -308,14 +552,17 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       )) {
         context[name] = type;
       }
-
-      ctx.localDecls
-          .map((decl) => decl.accept(TopLevelFunctionVisitor()))
-          .fold(
-            StellaTypesContext.root(),
-            (ctx1, ctx2) => ctx1.merge(ctx2),
-          )
-          .let(context.add);
+      try {
+        ctx.localDecls
+            .map((decl) => decl.accept(TopLevelFunctionVisitor()))
+            .fold(
+              StellaTypesContext.root(),
+              (ctx1, ctx2) => ctx1.merge(ctx2),
+            )
+            .let(context.add);
+      } on ErrorTypeReport catch (error) {
+        return error;
+      }
 
       final innerErrorReport = ctx.localDecls
           .map((decl) => decl.accept(this))
@@ -375,11 +622,15 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         (decl) => decl.name!.text!,
       );
       final argTypes = paramDecls.map(
-        (decl) => decl.paramType!.accept(StellaTypesMapperVisitor())!,
+        (decl) => decl.paramType!.accept(this)!,
       );
 
+      if (argTypes.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+        return error;
+      }
+
       for (final (name, type) in ZipIterable(argNames, argTypes)) {
-        context[name] = type;
+        context[name] = type.typeOrNull!;
       }
 
       final retExp = ctx.returnExpr!.accept(this)!;
@@ -388,12 +639,15 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         GotTypeReport(:final type) => GotTypeReport(
             typesContext: context.clone(),
             type: Func(
-              args: argTypes.toList(),
+              args: argTypes
+                  .map((t) => t.typeOrNull)
+                  .whereType<StellaType>()
+                  .toList(),
               returnType: type,
               lambda: true,
             ),
           ),
-      // TODO: pass recovery val
+        // TODO: pass recovery val
         _ => retExp,
       };
     });
@@ -488,10 +742,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   @override
   StellaTypeReport visitTuple(TupleContext ctx) {
     final components = ctx.exprs.map((c) => c.accept(this)!).toList();
-    final type = components
-        .map((component) => component.typeOrNull)
-        .whereType<StellaType>()
-        .toList();
+    final type = components.map((component) => component.typeOrNull).toList();
 
     final anyErrorReport = components.whereType<ErrorTypeReport>().firstOrNull;
 
@@ -499,7 +750,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return anyErrorReport.copyWith(
         typesContext: context.clone(),
         recoveryType: TypeTuple(
-          types: [if (type.length == components.length) ...type],
+          types: type,
         ),
       );
     }
@@ -549,6 +800,91 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     return GotTypeReport(
       typesContext: context.clone(),
       type: tupleType!.types[index]!,
+    );
+  }
+
+  /// T-Record rule
+  /// return Record type
+  @override
+  StellaTypeReport visitRecord(RecordContext ctx) {
+    final names = ctx.binds.map((c) => c.name!.text!).toList();
+    final types = ctx.binds.map((c) => c.rhs!.accept(this)!).toList();
+    final recordTypes = ZipIterable(names, types).map(
+      (entry) => MapEntry(
+        entry.$1,
+        entry.$2.typeOrNull,
+      ),
+    );
+
+    final namesSet = names.toSet();
+    if (namesSet.length != names.length) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.duplicateRecordFields,
+        message: 'Duplicate record fields detected',
+        recoveryType: TypeRecord(
+          types: Map.fromEntries(recordTypes),
+        ),
+      );
+    }
+
+    final anyErrorReport = types.whereType<ErrorTypeReport>().firstOrNull;
+    if (anyErrorReport != null) {
+      return anyErrorReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: TypeRecord(
+          types: Map.fromEntries(recordTypes),
+        ),
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeRecord(
+        types: Map.fromEntries(recordTypes),
+      ),
+    );
+  }
+
+  /// T-Proj rule
+  /// return Type of proj
+  @override
+  StellaTypeReport visitDotRecord(DotRecordContext ctx) {
+    final recordReport = ctx.expr_!.accept(this)!;
+    final label = ctx.label!.text!;
+
+    final recordType = recordReport.typeOrNull;
+
+    if (recordType is! TypeRecord?) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.notARecord,
+        message: 'Expected type Record, but got $recordType',
+        cause: recordReport,
+      );
+    }
+
+    if (recordReport is ErrorTypeReport) {
+      return recordReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: recordType?.types[label],
+      );
+    }
+
+
+    if (!recordType!.types.containsKey(label)) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.unexpectedFieldAccess,
+        message: 'Missing field: $label in record $recordType',
+        cause: recordReport,
+      );
+    }
+
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: recordType.types[label]!,
     );
   }
 }

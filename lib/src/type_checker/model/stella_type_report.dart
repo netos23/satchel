@@ -15,8 +15,10 @@ sealed class StellaTypeReport {
 
   StellaType? get typeOrNull;
 
-  StellaTypeReport inferTypeReport(StellaTypeReport typeReport,
-      StellaTypesContext ctx,);
+  StellaTypeReport inferTypeReport(
+    StellaTypeReport typeReport,
+    StellaTypesContext ctx,
+  );
 }
 
 class GotTypeReport extends StellaTypeReport {
@@ -31,8 +33,10 @@ class GotTypeReport extends StellaTypeReport {
   bool hasType(StellaType type) => type == this.type;
 
   @override
-  StellaTypeReport inferTypeReport(StellaTypeReport typeReport,
-      StellaTypesContext ctx,) {
+  StellaTypeReport inferTypeReport(
+    StellaTypeReport typeReport,
+    StellaTypesContext ctx,
+  ) {
     if (!typeReport.hasType(type)) {
       return ErrorTypeReport(
         typesContext: typesContext,
@@ -74,6 +78,7 @@ enum StellaTypeError implements Exception {
   unexpectedRecordFields('ERROR_UNEXPECTED_RECORD_FIELDS'),
   unexpectedRecord('ERROR_UNEXPECTED_RECORD'),
   notARecord('ERROR_NOT_A_RECORD'),
+  duplicateRecordFields('ERROR_DUPLICATE_RECORD_FIELDS '),
   duplicateRecordTypeFields('ERROR_DUPLICATE_RECORD_TYPE_FIELDS'),
   unexpectedFieldAccess('ERROR_UNEXPECTED_FIELD_ACCESS'),
   unexpectedTuple('ERROR_UNEXPECTED_TUPLE'),
@@ -106,11 +111,33 @@ enum StellaTypeError implements Exception {
     if ((expected, actual) case (_, TypeList())) {
       return unexpectedList;
     } else if ((expected, actual) case final (TypeTuple, TypeTuple) pair) {
-      if(pair.$1.types.length != pair.$2.types.length){
+      if (pair.$1.types.length != pair.$2.types.length) {
         return unexpectedTupleLength;
       }
     } else if ((expected, actual) case (_, TypeTuple())) {
       return unexpectedTuple;
+    } else if ((expected, actual) case final (TypeRecord, TypeRecord) pair) {
+      final expectedKeys = pair.$1.types.keys.toSet();
+      final actualKeys = pair.$2.types.keys.toSet();
+
+      final missing = expectedKeys.difference(actualKeys);
+      if (missing.isNotEmpty) {
+        return missingRecordFields;
+      }
+
+      final unexpected = actualKeys.difference(expectedKeys);
+      if (unexpected.isNotEmpty) {
+        return unexpectedRecordFields;
+      }
+
+      for (final key in expectedKeys) {
+        if (pair.$1.types[key] != pair.$2.types[key]) {
+          return StellaTypeError.unexpectedExpression(
+            expected: pair.$1.types[key]!,
+            actual: pair.$2.types[key]!,
+          );
+        }
+      }
     } else if ((expected, actual) case (_, TypeRecord())) {
       return unexpectedRecord;
     } else if ((expected, actual) case final (Func, Func) pair) {
@@ -162,8 +189,10 @@ class ErrorTypeReport extends StellaTypeReport {
   bool hasType(StellaType type) => recoveryType == null || recoveryType == type;
 
   @override
-  StellaTypeReport inferTypeReport(StellaTypeReport typeReport,
-      StellaTypesContext ctx,) {
+  StellaTypeReport inferTypeReport(
+    StellaTypeReport typeReport,
+    StellaTypesContext ctx,
+  ) {
     return ErrorTypeReport(
       typesContext: ctx,
       cause: this,
