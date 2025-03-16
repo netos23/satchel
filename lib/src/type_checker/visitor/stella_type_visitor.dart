@@ -292,6 +292,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     );
   }
 
+  /// T-Abs rule
+  /// Inject args in context
+  /// Checks return expression
+  /// Return function
   @override
   StellaTypeReport? visitDeclFun(DeclFunContext ctx) {
     return withContext((context) {
@@ -360,6 +364,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     });
   }
 
+  /// T-Abs rule
+  /// Inject args in context
+  /// Checks return expression
+  /// Return function
   @override
   StellaTypeReport? visitAbstraction(AbstractionContext ctx) {
     return withContext((context) {
@@ -391,6 +399,9 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     });
   }
 
+  /// T-App rule
+  /// Check type of function and args
+  /// Return the function type
   @override
   StellaTypeReport? visitApplication(ApplicationContext ctx) {
     final funcReport = ctx.fun?.accept(this);
@@ -425,10 +436,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           typesContext: context.clone(),
           errorCode: StellaTypeError.unexpectedExpression(
             expected: expected,
-            actual: actualTypeReport.tryAs<GotTypeReport>()?.type,
+            actual: actualTypeReport.typeOrNull,
           ),
-          message: actualTypeReport.tryAs<GotTypeReport>()?.let(
-              (it) => 'Expected type $expected, but got ${type.returnType}'),
+          message: 'Expected type $expected, '
+              'but got ${actualTypeReport.typeOrNull}',
           cause: actualTypeReport,
           recoveryType: type.returnType,
         );
