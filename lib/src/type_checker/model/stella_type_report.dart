@@ -15,10 +15,8 @@ sealed class StellaTypeReport {
 
   StellaType? get typeOrNull;
 
-  StellaTypeReport inferTypeReport(
-    StellaTypeReport typeReport,
-    StellaTypesContext ctx,
-  );
+  StellaTypeReport inferTypeReport(StellaTypeReport typeReport,
+      StellaTypesContext ctx,);
 }
 
 class GotTypeReport extends StellaTypeReport {
@@ -33,10 +31,8 @@ class GotTypeReport extends StellaTypeReport {
   bool hasType(StellaType type) => type == this.type;
 
   @override
-  StellaTypeReport inferTypeReport(
-    StellaTypeReport typeReport,
-    StellaTypesContext ctx,
-  ) {
+  StellaTypeReport inferTypeReport(StellaTypeReport typeReport,
+      StellaTypesContext ctx,) {
     if (!typeReport.hasType(type)) {
       return ErrorTypeReport(
         typesContext: typesContext,
@@ -81,6 +77,8 @@ enum StellaTypeError implements Exception {
   duplicateRecordTypeFields('ERROR_DUPLICATE_RECORD_TYPE_FIELDS'),
   unexpectedFieldAccess('ERROR_UNEXPECTED_FIELD_ACCESS'),
   unexpectedTuple('ERROR_UNEXPECTED_TUPLE'),
+  tupleIndexOutOfBounds('ERROR_TUPLE_INDEX_OUT_OF_BOUNDS'),
+  unexpectedTupleLength('ERROR_UNEXPECTED_TUPLE_LENGTH'),
   notATuple('ERROR_NOT_A_TUPLE'),
   ambiguousSumType('ERROR_AMBIGUOUS_SUM_TYPE'),
   illegalEmptyMatching('ERROR_ILLEGAL_EMPTY_MATCHING'),
@@ -107,23 +105,26 @@ enum StellaTypeError implements Exception {
   }) {
     if ((expected, actual) case (_, TypeList())) {
       return unexpectedList;
+    } else if ((expected, actual) case final (TypeTuple, TypeTuple) pair) {
+      if(pair.$1.types.length != pair.$2.types.length){
+        return unexpectedTupleLength;
+      }
     } else if ((expected, actual) case (_, TypeTuple())) {
       return unexpectedTuple;
     } else if ((expected, actual) case (_, TypeRecord())) {
       return unexpectedRecord;
     } else if ((expected, actual) case final (Func, Func) pair) {
       if (pair.$1.args.length != pair.$2.args.length) {
-        return pair.$2.lambda
-            ? unexpectedNumberOfParametersInLambda
-            : unexpectedTypeForExpression;
+        if (pair.$2.lambda) {
+          return unexpectedNumberOfParametersInLambda;
+        }
       }
 
       if (!pair.$1.args.equals(pair.$2.args)) {
         return unexpectedTypeForParameter;
       }
 
-      if (pair.$1.returnType != pair.$2.returnType &&
-          pair.$2.returnType.tryAs<Func>()?.lambda == true) {
+      if (pair.$1.returnType != pair.$2.returnType) {
         return StellaTypeError.unexpectedExpression(
           expected: pair.$1.returnType,
           actual: pair.$2.returnType,
@@ -161,10 +162,8 @@ class ErrorTypeReport extends StellaTypeReport {
   bool hasType(StellaType type) => recoveryType == null || recoveryType == type;
 
   @override
-  StellaTypeReport inferTypeReport(
-    StellaTypeReport typeReport,
-    StellaTypesContext ctx,
-  ) {
+  StellaTypeReport inferTypeReport(StellaTypeReport typeReport,
+      StellaTypesContext ctx,) {
     return ErrorTypeReport(
       typesContext: ctx,
       cause: this,

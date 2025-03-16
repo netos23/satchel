@@ -348,7 +348,6 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           recoveryType: Func(
             args: type.args,
             returnType: type.returnType,
-            name: name,
           ),
         );
       }
@@ -358,7 +357,6 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         type: Func(
           args: type.args,
           returnType: type.returnType,
-          name: name,
         ),
       );
     });
@@ -392,8 +390,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
             type: Func(
               args: argTypes.toList(),
               returnType: type,
+              lambda: true,
             ),
           ),
+      // TODO: pass recovery val
         _ => retExp,
       };
     });
@@ -473,7 +473,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       );
     }
 
-    if(exprReport1 is ErrorTypeReport){
+    if (exprReport1 is ErrorTypeReport) {
       return exprReport1.copyWith(
         typesContext: context.clone(),
         recoveryType: exprReport2.typeOrNull,
@@ -481,5 +481,74 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     }
 
     return exprReport2;
+  }
+
+  /// T-Tuple rule
+  /// return Tuple type
+  @override
+  StellaTypeReport visitTuple(TupleContext ctx) {
+    final components = ctx.exprs.map((c) => c.accept(this)!).toList();
+    final type = components
+        .map((component) => component.typeOrNull)
+        .whereType<StellaType>()
+        .toList();
+
+    final anyErrorReport = components.whereType<ErrorTypeReport>().firstOrNull;
+
+    if (anyErrorReport != null) {
+      return anyErrorReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: TypeTuple(
+          types: [if (type.length == components.length) ...type],
+        ),
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeTuple(types: type),
+    );
+  }
+
+  /// T-Proj rule
+  /// return Type of proj
+  @override
+  StellaTypeReport visitDotTuple(DotTupleContext ctx) {
+    final tupleReport = ctx.expr_!.accept(this)!;
+    final index = int.parse(ctx.index!.text!) - 1;
+
+    final tupleType = tupleReport.typeOrNull;
+
+    if (tupleType is! TypeTuple?) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.notATuple,
+        message: 'Expected type Tuple, but got $tupleType',
+        cause: tupleReport,
+      );
+    }
+
+    final tupleLen = tupleType?.types.length ?? 0;
+    if (tupleLen <= index || index < 0) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.tupleIndexOutOfBounds,
+        message: 'Index out of bounds. Expected 1 <= index <= ${tupleLen + 1},'
+            ' but got ${index + 1}',
+        cause: tupleReport,
+      );
+    }
+
+    if (tupleReport is ErrorTypeReport) {
+      return tupleReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: tupleType?.types[index],
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: tupleType!.types[index]!,
+    );
   }
 }

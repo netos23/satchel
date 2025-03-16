@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:satchel/src/util/equality.dart';
 
 interface class TypeMatcher {}
 
@@ -70,14 +71,14 @@ class TypeSum extends StellaType {
 }
 
 class Func extends StellaType {
-  final String? name;
+  final bool lambda;
   final List<StellaType> args;
   final StellaType returnType;
 
   const Func({
     required this.args,
     required this.returnType,
-    this.name,
+    this.lambda = false,
   });
 
   @override
@@ -91,8 +92,6 @@ class Func extends StellaType {
 
   @override
   int get hashCode => super.hashCode ^ args.hashCode ^ returnType.hashCode;
-
-  bool get lambda => name == null;
 }
 
 class TypeForAll extends StellaType {
@@ -140,7 +139,7 @@ class TypeRec extends StellaType {
 }
 
 class TypeTuple extends StellaType {
-  final List<StellaType> types;
+  final List<StellaType?> types;
 
   const TypeTuple({
     required this.types,
@@ -152,7 +151,7 @@ class TypeTuple extends StellaType {
       super == other &&
           other is TypeTuple &&
           runtimeType == other.runtimeType &&
-          types.equals(other.types);
+          types.equals(other.types, const NullableEquality<StellaType?>());
 
   @override
   int get hashCode => super.hashCode ^ types.hashCode;
