@@ -451,4 +451,35 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       type: type.returnType,
     );
   }
+
+  /// T-Unit rule
+  /// Check type of first and second expression
+  /// Return the type of second expr
+  @override
+  StellaTypeReport? visitSequence(SequenceContext ctx) {
+    final exprReport1 = ctx.expr1!.accept(this)!;
+    final exprReport2 = ctx.expr2!.accept(this)!;
+
+    if (!exprReport1.hasType(const Unit())) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.unexpectedExpression(
+          expected: const Unit(),
+          actual: exprReport1.typeOrNull,
+        ),
+        message: 'Expected type Unit, but got ${exprReport1.typeOrNull}',
+        cause: exprReport1,
+        recoveryType: exprReport2.typeOrNull,
+      );
+    }
+
+    if(exprReport1 is ErrorTypeReport){
+      return exprReport1.copyWith(
+        typesContext: context.clone(),
+        recoveryType: exprReport2.typeOrNull,
+      );
+    }
+
+    return exprReport2;
+  }
 }
