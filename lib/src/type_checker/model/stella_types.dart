@@ -23,10 +23,26 @@ sealed class StellaType implements TypeMatcher {
 
 class Bool extends StellaType {
   const Bool();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is Bool && runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => 1;
 }
 
 class Nat extends StellaType {
   const Nat();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is Nat && runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => 2;
 }
 
 class TypeRef extends StellaType {
@@ -139,6 +155,10 @@ class TypeRec extends StellaType {
 }
 
 class TypeTuple extends StellaType {
+  static const _equality = ListEquality<StellaType?>(
+    NullableEquality<StellaType?>(),
+  );
+
   final List<StellaType?> types;
 
   const TypeTuple({
@@ -151,13 +171,17 @@ class TypeTuple extends StellaType {
       super == other &&
           other is TypeTuple &&
           runtimeType == other.runtimeType &&
-          types.equals(other.types, const NullableEquality<StellaType?>());
+          _equality.equals(types, other.types);
 
   @override
-  int get hashCode => super.hashCode ^ types.hashCode;
+  int get hashCode => super.hashCode ^ _equality.hash(types);
 }
 
 class TypeRecord extends StellaType {
+  static const _equality = MapEquality<String,StellaType?>(
+    values: NullableEquality<StellaType?>(),
+  );
+
   final Map<String, StellaType?> types;
 
   const TypeRecord({
@@ -170,15 +194,17 @@ class TypeRecord extends StellaType {
       super == other &&
           other is TypeRecord &&
           runtimeType == other.runtimeType &&
-          MapEquality(
-            values: const NullableEquality<StellaType?>(),
-          ).equals(types, other.types);
+          _equality.equals(types, other.types);
 
   @override
-  int get hashCode => super.hashCode ^ types.hashCode;
+  int get hashCode => super.hashCode ^ _equality.hash(types);
 }
 
 class TypeVariant extends StellaType {
+  static const _equality = MapEquality<String,StellaType?>(
+    values: NullableEquality<StellaType?>(),
+  );
+
   final Map<String, StellaType> types;
 
   const TypeVariant({
@@ -191,10 +217,10 @@ class TypeVariant extends StellaType {
       super == other &&
           other is TypeVariant &&
           runtimeType == other.runtimeType &&
-          MapEquality().equals(types, other.types);
+          _equality.equals(types, other.types);
 
   @override
-  int get hashCode => super.hashCode ^ types.hashCode;
+  int get hashCode => super.hashCode ^ _equality.hash(types);
 }
 
 class TypeList extends StellaType {
@@ -218,6 +244,14 @@ class TypeList extends StellaType {
 
 class Unit extends StellaType {
   const Unit();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is Unit && runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => 3;
 }
 
 class Top extends StellaType {

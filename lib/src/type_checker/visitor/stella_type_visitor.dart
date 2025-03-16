@@ -887,4 +887,12 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       type: recordType.types[label]!,
     );
   }
+
+
+  /// T-Inl
+  @override
+  StellaTypeReport? visitInl(InlContext ctx) {
+    // TODO: implement visitInl
+    return super.visitInl(ctx);
+  }
 }
