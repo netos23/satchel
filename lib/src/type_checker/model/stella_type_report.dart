@@ -1,3 +1,6 @@
+import 'package:collection/collection.dart';
+import 'package:satchel/src/util/extensions.dart';
+
 import 'stella_types.dart';
 import 'stella_types_context.dart';
 
@@ -9,6 +12,8 @@ sealed class StellaTypeReport {
   });
 
   bool hasType(StellaType type);
+
+  StellaType? get typeOrNull;
 
   StellaTypeReport inferTypeReport(
     StellaTypeReport typeReport,
@@ -32,46 +37,34 @@ class GotTypeReport extends StellaTypeReport {
     StellaTypeReport typeReport,
     StellaTypesContext ctx,
   ) {
-    // TODO(netos23): report position of error
-    return switch (typeReport) {
-      GotTypeReport(:final type) => typeReport.hasType(this.type)
-          ? GotTypeReport(
-              typesContext: ctx,
-              type: type,
-            )
-          : ErrorTypeReport(
-              typesContext: typesContext,
-              cause: typeReport,
-              message: 'Expect ${this.type}, but got $type.',
-              errorCode: StellaTypeError.unexpectedTypeForExpression,
-            ),
-      UnknownTypeReport() => GotTypeReport(
-          typesContext: ctx,
-          type: type,
+    if (!typeReport.hasType(type)) {
+      return ErrorTypeReport(
+        typesContext: typesContext,
+        cause: typeReport,
+        message: 'Expect ${this.type}, but got $type.',
+        errorCode: StellaTypeError.unexpectedExpression(
+          expected: type,
+          actual: typeReport.typeOrNull,
         ),
-      ErrorTypeReport(:final errorCode) => ErrorTypeReport(
-          typesContext: ctx,
-          errorCode: errorCode,
-          cause: typeReport,
-        ),
-    };
-  }
-}
+        recoveryType: type,
+      );
+    }
 
-class UnknownTypeReport extends StellaTypeReport {
-  const UnknownTypeReport({required super.typesContext});
+    if (typeReport is ErrorTypeReport) {
+      return typeReport.copyWith(
+        typesContext: ctx,
+        recoveryType: type,
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: ctx,
+      type: type,
+    );
+  }
 
   @override
-  bool hasType(StellaType type) => false;
-
-  @override
-  StellaTypeReport inferTypeReport(
-    StellaTypeReport typeReport,
-    StellaTypesContext ctx,
-  ) {
-    // TODO: implement inferTypeReport
-    throw UnimplementedError();
-  }
+  StellaType? get typeOrNull => type;
 }
 
 enum StellaTypeError implements Exception {
@@ -101,9 +94,47 @@ enum StellaTypeError implements Exception {
   unexpectedVariantLabel('ERROR_UNEXPECTED_VARIANT_LABEL'),
   duplicateVariantTypeFields('ERROR_DUPLICATE_VARIANT_TYPE_FIELDS'),
   incorrectNumberOfArguments('ERROR_INCORRECT_NUMBER_OF_ARGUMENTS'),
+  unexpectedNumberOfParametersInLambda(
+    'ERROR_UNEXPECTED_NUMBER_OF_PARAMETERS_IN_LAMBDA',
+  ),
   incorrectArityOfMain('ERROR_INCORRECT_ARITY_OF_MAIN');
 
   final String code;
+
+  factory StellaTypeError.unexpectedExpression({
+    required StellaType expected,
+    required StellaType? actual,
+  }) {
+    if ((expected, actual) case (_, TypeList())) {
+      return unexpectedList;
+    } else if ((expected, actual) case (_, TypeTuple())) {
+      return unexpectedTuple;
+    } else if ((expected, actual) case (_, TypeRecord())) {
+      return unexpectedRecord;
+    } else if ((expected, actual) case final (Func, Func) pair) {
+      if (pair.$1.args.length != pair.$2.args.length) {
+        return pair.$2.lambda
+            ? unexpectedNumberOfParametersInLambda
+            : unexpectedTypeForExpression;
+      }
+
+      if (!pair.$1.args.equals(pair.$2.args)) {
+        return unexpectedTypeForParameter;
+      }
+
+      if (pair.$1.returnType != pair.$2.returnType &&
+          pair.$2.returnType.tryAs<Func>()?.lambda == true) {
+        return StellaTypeError.unexpectedExpression(
+          expected: pair.$1.returnType,
+          actual: pair.$2.returnType,
+        );
+      }
+    } else if ((expected, actual) case (_, Func(:final lambda))) {
+      return lambda ? unexpectedLambda : unexpectedTypeForExpression;
+    }
+
+    return unexpectedTypeForExpression;
+  }
 
   const StellaTypeError(this.code);
 
@@ -114,17 +145,20 @@ enum StellaTypeError implements Exception {
 class ErrorTypeReport extends StellaTypeReport {
   final StellaTypeError errorCode;
   final String? message;
+  @Deprecated('Use recovery type instead')
   final StellaTypeReport? cause;
+  final StellaType? recoveryType;
 
   const ErrorTypeReport({
     required super.typesContext,
     required this.errorCode,
-    this.cause,
+    @Deprecated('Use recovery type instead') this.cause,
+    this.recoveryType,
     this.message,
   });
 
   @override
-  bool hasType(StellaType type) => false;
+  bool hasType(StellaType type) => recoveryType == null || recoveryType == type;
 
   @override
   StellaTypeReport inferTypeReport(
@@ -135,6 +169,26 @@ class ErrorTypeReport extends StellaTypeReport {
       typesContext: ctx,
       cause: this,
       errorCode: errorCode,
+      recoveryType: recoveryType,
+    );
+  }
+
+  @override
+  StellaType? get typeOrNull => recoveryType;
+
+  StellaTypeReport copyWith({
+    StellaTypesContext? typesContext,
+    StellaTypeError? errorCode,
+    String? message,
+    @Deprecated('Use recovery type instead') StellaTypeReport? cause,
+    StellaType? recoveryType,
+  }) {
+    return ErrorTypeReport(
+      typesContext: typesContext ?? this.typesContext,
+      errorCode: errorCode ?? this.errorCode,
+      message: message ?? this.message,
+      cause: cause ?? this.cause,
+      recoveryType: recoveryType ?? this.recoveryType,
     );
   }
 }

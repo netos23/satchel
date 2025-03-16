@@ -35,12 +35,16 @@ class StellaTypesContext {
     );
   }
 
-  StellaTypesContext? merge(StellaTypesContext? other) {
+  StellaTypesContext merge(StellaTypesContext? other) {
     final typesMap = {
       ..._types,
       ...?other?._types,
     };
 
     return StellaTypesContext(typesMap);
+  }
+
+  void add(StellaTypesContext localContext) {
+    _types.addAll(localContext._types);
   }
 }

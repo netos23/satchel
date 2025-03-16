@@ -27,7 +27,7 @@ void main() {
 
             switch (report) {
               case ErrorTypeReport(:final errorCode):
-                expect(expectErrorCode, errorCode.code);
+                expect(errorCode.code,expectErrorCode);
               default:
                 fail('Expect error report');
             }

@@ -122,9 +122,4 @@ class StellaTypesMapperVisitor extends StellaParserBaseVisitor<StellaType> {
   StellaType visitTypeVar(TypeVarContext ctx) {
     return TypeVar(ctx.name!.text!);
   }
-
-  @override
-  StellaType visitTypeParens(TypeParensContext ctx) {
-    return TypeParens(ctx.type_!.accept(this)!);
-  }
 }
