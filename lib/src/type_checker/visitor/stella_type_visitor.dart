@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:satchel/src/type_checker/visitor/top_level_function_visitor.dart';
 import 'package:satchel/src/util/extensions.dart';
 import 'package:satchel/src/util/iterable.dart';
 
@@ -21,7 +22,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     StellaTypeReport? aggregate,
     StellaTypeReport? nextResult,
   ) {
-    if(nextResult is ErrorTypeReport){
+    if (nextResult is ErrorTypeReport) {
       return nextResult;
     }
 
@@ -302,6 +303,23 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         type.args,
       )) {
         context[name] = type;
+      }
+
+      ctx.localDecls
+          .map((decl) => decl.accept(TopLevelFunctionVisitor()))
+          .fold(
+            StellaTypesContext.root(),
+            (ctx1, ctx2) => ctx1.merge(ctx2),
+          )
+          .let(context.add);
+
+      final innerErrorReport = ctx.localDecls
+          .map((decl) => decl.accept(this))
+          .whereType<ErrorTypeReport>()
+          .firstOrNull;
+
+      if (innerErrorReport != null) {
+        return innerErrorReport;
       }
 
       final retExp = ctx.returnExpr!.accept(this)!;
