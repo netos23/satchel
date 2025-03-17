@@ -55,6 +55,9 @@ class GotTypeReport extends StellaTypeReport {
           left: sums.$1.left ?? sums.$2.left,
           right: sums.$1.right ?? sums.$2.right,
         ),
+      final (TypeVariant, TypeVariant) sums => TypeVariant.merge(
+          [sums.$1, sums.$2],
+        ),
       _ => type,
     };
 
@@ -78,11 +81,13 @@ class GotTypeReport extends StellaTypeReport {
 enum StellaTypeError implements Exception {
   unexpectedTypeForParameter('ERROR_UNEXPECTED_TYPE_FOR_PARAMETER'),
   unexpectedTypeForExpression('ERROR_UNEXPECTED_TYPE_FOR_EXPRESSION'),
+  unexpectedDataForNullableLabel('ERROR_UNEXPECTED_DATA_FOR_NULLARY_LABEL'),
   unexpectedLambda('ERROR_UNEXPECTED_LAMBDA'),
   notAFunction('ERROR_NOT_A_FUNCTION'),
   undefinedVariable('ERROR_UNDEFINED_VARIABLE'),
   missingMain('ERROR_MISSING_MAIN'),
   missingRecordFields('ERROR_MISSING_RECORD_FIELDS'),
+  missingDataForLabel('ERROR_MISSING_DATA_FOR_LABEL'),
   unexpectedRecordFields('ERROR_UNEXPECTED_RECORD_FIELDS'),
   unexpectedRecord('ERROR_UNEXPECTED_RECORD'),
   notARecord('ERROR_NOT_A_RECORD'),
@@ -149,6 +154,20 @@ enum StellaTypeError implements Exception {
       }
     } else if ((expected, actual) case (_, TypeRecord())) {
       return unexpectedRecord;
+    } else if ((expected, actual) case final (TypeVariant, TypeVariant) pair) {
+      return switch (TypeVariant.equals(pair.$1, pair.$2)) {
+        TypeVariantEquality.missingDataForLabel => missingDataForLabel,
+        TypeVariantEquality.unexpectedDataForNullableLabel =>
+          unexpectedDataForNullableLabel,
+        TypeVariantEquality.unexpectedVariantLabel => unexpectedVariantLabel,
+        _ => unexpectedTypeForExpression,
+      };
+    } else if ((expected, actual) case (_, TypeVariant())) {
+      return unexpectedVariant;
+    } else if ((expected, actual) case (TypeSum(), TypeSum())) {
+      return unexpectedTypeForExpression;
+    } else if ((expected, actual) case (_, TypeSum())) {
+      return unexpectedInjection;
     } else if ((expected, actual) case final (Func, Func) pair) {
       if (pair.$1.args.length != pair.$2.args.length) {
         if (pair.$2.lambda) {
@@ -178,7 +197,21 @@ enum StellaTypeError implements Exception {
       TypeSum() => ambiguousSumType,
       TypeVariant() => ambiguousVariantType,
       TypeList() => ambiguousList,
-      _ => unexpectedTypeForExpression
+      TypeRef(:final type) => StellaTypeError.ambiguousType(type),
+      Func(:final args, :final returnType) => [...args, returnType]
+          .firstWhere((t) => !t.isStrict)
+          .let((type) => StellaTypeError.ambiguousType(type)),
+      TypeForAll(:final type) => StellaTypeError.ambiguousType(type),
+      TypeRec(:final type) => StellaTypeError.ambiguousType(type),
+      TypeTuple(:final types) => types
+              .firstWhere((t) => !(t?.isStrict ?? false))
+              ?.let((type) => StellaTypeError.ambiguousType(type)) ??
+          unexpectedTypeForExpression,
+      TypeRecord(:final types) => types.values
+              .firstWhere((t) => !(t?.isStrict ?? false))
+              ?.let((type) => StellaTypeError.ambiguousType(type)) ??
+          unexpectedTypeForExpression,
+      _ => unexpectedTypeForExpression,
     };
   }
 

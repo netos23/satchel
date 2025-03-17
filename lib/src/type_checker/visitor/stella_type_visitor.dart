@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:collection/collection.dart';
 import 'package:satchel/src/type_checker/visitor/top_level_function_visitor.dart';
 import 'package:satchel/src/util/extensions.dart';
@@ -190,7 +192,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     return GotTypeReport(
       typesContext: context.clone(),
       type: TypeRecord(
-        types: Map.fromIterables(
+        types: LinkedHashMap.fromIterables(
           labels,
           types.map((t) => t.typeOrNull).whereType<StellaType>().toList(),
         ),
@@ -201,7 +203,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   @override
   StellaTypeReport visitTypeVariant(TypeVariantContext ctx) {
     final labels = ctx.fieldTypes.map((f) => f.label!.text!).toList();
-    final types = ctx.fieldTypes.map((f) => f.type_!.accept(this)!).toList();
+    final types = ctx.fieldTypes.map((f) => f.type_?.accept(this)).toList();
 
     if (labels.toSet().length != labels.length) {
       return ErrorTypeReport(
@@ -217,9 +219,9 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     return GotTypeReport(
       typesContext: context.clone(),
       type: TypeVariant(
-        types: Map.fromIterables(
+        types: LinkedHashMap.fromIterables(
           labels,
-          types.map((t) => t.typeOrNull).whereType<StellaType>().toList(),
+          types.map((t) => t?.typeOrNull).toList(),
         ),
       ),
     );
@@ -654,18 +656,18 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
               ),
         ErrorTypeReport(:final typeOrNull) => typeOrNull?.let(
               (it) => retExp.copyWith(
-                  typesContext: context.clone(),
-                  recoveryType: it.isStrict
-                      ? Func(
-                          args: argTypes
-                              .map((t) => t.typeOrNull)
-                              .whereType<StellaType>()
-                              .toList(),
-                          returnType: it,
-                          lambda: true,
-                        )
-                      : null,
-                ),
+                typesContext: context.clone(),
+                recoveryType: it.isStrict
+                    ? Func(
+                        args: argTypes
+                            .map((t) => t.typeOrNull)
+                            .whereType<StellaType>()
+                            .toList(),
+                        returnType: it,
+                        lambda: true,
+                      )
+                    : null,
+              ),
             ) ??
             retExp,
       };
@@ -798,6 +800,15 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       );
     }
 
+    if (tupleType != null && !tupleType.isStrict) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.ambiguousType(tupleType),
+        message: 'Ambiguous type',
+        cause: tupleReport,
+      );
+    }
+
     final tupleLen = tupleType?.types.length ?? 0;
     if (tupleLen <= index || index < 0) {
       return ErrorTypeReport(
@@ -842,7 +853,8 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         errorCode: StellaTypeError.duplicateRecordFields,
         message: 'Duplicate record fields detected',
         recoveryType: TypeRecord(
-          types: Map.fromEntries(recordTypes),
+          types: LinkedHashMap.fromEntries(recordTypes),
+          instance: true,
         ),
       );
     }
@@ -852,7 +864,8 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return anyErrorReport.copyWith(
         typesContext: context.clone(),
         recoveryType: TypeRecord(
-          types: Map.fromEntries(recordTypes),
+          types: LinkedHashMap.fromEntries(recordTypes),
+          instance: true,
         ),
       );
     }
@@ -860,7 +873,8 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     return GotTypeReport(
       typesContext: context.clone(),
       type: TypeRecord(
-        types: Map.fromEntries(recordTypes),
+        types: LinkedHashMap.fromEntries(recordTypes),
+        instance: true,
       ),
     );
   }
@@ -890,6 +904,15 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       );
     }
 
+    if (recordType != null && !recordType.isStrict) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.ambiguousType(recordType),
+        message: 'Ambiguous type',
+        cause: recordReport,
+      );
+    }
+
     if (!recordType!.types.containsKey(label)) {
       return ErrorTypeReport(
         typesContext: context.clone(),
@@ -907,7 +930,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
 
   /// T-Inl
   @override
-  StellaTypeReport? visitInl(InlContext ctx) {
+  StellaTypeReport visitInl(InlContext ctx) {
     final typeReport = ctx.expr_!.accept(this)!;
 
     if (typeReport is ErrorTypeReport) {
@@ -929,7 +952,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
 
   /// T-Inr
   @override
-  StellaTypeReport? visitInr(InrContext ctx) {
+  StellaTypeReport visitInr(InrContext ctx) {
     final typeReport = ctx.expr_!.accept(this)!;
 
     if (typeReport is ErrorTypeReport) {
@@ -945,6 +968,38 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       typesContext: context.clone(),
       type: TypeSum(
         right: typeReport.typeOrNull,
+      ),
+    );
+  }
+
+  @override
+  StellaTypeReport visitVariant(VariantContext ctx) {
+    final label = ctx.label!.text!;
+    final expression = ctx.rhs?.accept(this);
+
+    if (expression is ErrorTypeReport) {
+      return expression.copyWith(
+        typesContext: context.clone(),
+        recoveryType: expression.let(
+          (it) => TypeVariant(
+            types: LinkedHashMap.fromIterables(
+              [label],
+              [it.typeOrNull],
+            ),
+            strict: false,
+          ),
+        ),
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeVariant(
+        types: LinkedHashMap.fromIterables(
+          [label],
+          [expression?.typeOrNull],
+        ),
+        strict: false,
       ),
     );
   }

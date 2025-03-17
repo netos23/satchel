@@ -1,3 +1,6 @@
+import 'dart:collection';
+import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:satchel/src/util/equality.dart';
 
@@ -199,14 +202,20 @@ class TypeTuple extends StellaType {
 }
 
 class TypeRecord extends StellaType {
-  static const _equality = MapEquality<String, StellaType?>(
+  static const _mapEquality = MapEquality<String, StellaType?>(
     values: NullableEquality<StellaType?>(),
   );
+  static const _keyEquality = IterableEquality<String>();
+  static const _valueEquality = IterableEquality<StellaType?>(
+    NullableEquality<StellaType?>(),
+  );
 
-  final Map<String, StellaType?> types;
+  final LinkedHashMap<String, StellaType?> types;
+  final bool instance;
 
   const TypeRecord({
     required this.types,
+    this.instance = false,
   });
 
   @override
@@ -218,36 +227,126 @@ class TypeRecord extends StellaType {
       super == other &&
           other is TypeRecord &&
           runtimeType == other.runtimeType &&
-          _equality.equals(types, other.types);
+          ((instance || other.instance)
+              ? _mapEquality.equals(types, other.types)
+              : _keyEquality.equals(types.keys, other.types.keys) &&
+                  _valueEquality.equals(types.values, other.types.values));
 
   @override
-  int get hashCode => super.hashCode ^ _equality.hash(types);
+  int get hashCode {
+    final entries = types.entries.toList()..sortBy((e) => e.key);
+
+    return super.hashCode ^
+        _keyEquality.hash(entries.map((e) => e.key)) ^
+        _valueEquality.hash(entries.map((e) => e.value));
+  }
+}
+
+enum TypeVariantEquality {
+  equals,
+  missingDataForLabel,
+  unexpectedDataForNullableLabel,
+  unexpectedVariantLabel,
+  notEqual
 }
 
 class TypeVariant extends StellaType {
-  static const _equality = MapEquality<String, StellaType?>(
-    values: NullableEquality<StellaType?>(),
+  static const _keyEquality = IterableEquality<String>();
+  static const _valueEquality = IterableEquality<StellaType?>(
+    NullableEquality<StellaType?>(),
   );
 
-  final Map<String, StellaType?> types;
+  final LinkedHashMap<String, StellaType?> types;
+  final bool strict;
 
   const TypeVariant({
     required this.types,
+    this.strict = true,
   });
 
-  @override
-  bool get isStrict => types.values.every((s) => s?.isStrict ?? false);
+  factory TypeVariant.merge(Iterable<TypeVariant> variants) {
+    return TypeVariant(
+      types: LinkedHashMap.fromIterables(
+        variants.expand((e) => e.types.keys),
+        variants.expand((e) => e.types.values),
+      ),
+      strict: false,
+    );
+  }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      super == other &&
-          other is TypeVariant &&
-          runtimeType == other.runtimeType &&
-          _equality.equals(types, other.types);
+  bool get isStrict => strict;
 
   @override
-  int get hashCode => super.hashCode ^ _equality.hash(types);
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+
+    if (super != other ||
+        other is! TypeVariant ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+
+    return equals(this, other) == TypeVariantEquality.equals;
+  }
+
+  static TypeVariantEquality equals(TypeVariant lhs, TypeVariant rhs) {
+    if (lhs.strict && rhs.strict) {
+      return _keyEquality.equals(lhs.types.keys, rhs.types.keys) &&
+              _valueEquality.equals(lhs.types.values, rhs.types.values)
+          ? TypeVariantEquality.equals
+          : TypeVariantEquality.notEqual;
+    }
+
+    if (!lhs.strict && !rhs.strict) {
+      return rhs.types.entries.every((e) {
+        final type = lhs.types[e.key];
+        return type == null || type == e.value;
+      })
+          ? TypeVariantEquality.equals
+          : TypeVariantEquality.notEqual;
+    }
+
+    final strict = lhs.strict ? lhs : rhs;
+    final nonStrict = lhs.strict ? rhs : lhs;
+
+    for (final nonStrictEntry in nonStrict.types.entries) {
+      if (!strict.types.containsKey(nonStrictEntry.key)) {
+        return TypeVariantEquality.unexpectedVariantLabel;
+      }
+
+      final expected = strict.types[nonStrictEntry.key];
+      final actual = nonStrictEntry.value;
+
+      switch ((expected, actual)) {
+        case (null, StellaType()):
+          return TypeVariantEquality.unexpectedDataForNullableLabel;
+        case (StellaType(), null):
+          return TypeVariantEquality.missingDataForLabel;
+        case final (StellaType, StellaType) types:
+          if (types.$1 != types.$2) {
+            return TypeVariantEquality.notEqual;
+          }
+        default:
+      }
+    }
+
+    return TypeVariantEquality.equals;
+  }
+
+  @override
+  int get hashCode =>
+      super.hashCode ^
+      _keyEquality.hash(types.keys) ^
+      _valueEquality.hash(types.values);
+
+  bool _compereStrictAndNonStrict(TypeVariant lhs, TypeVariant rhs) {
+    return rhs.types.entries.every(
+      (e) => lhs.types.containsKey(e.key) && lhs.types[e.key] == e.value,
+    );
+  }
 }
 
 class TypeList extends StellaType {
