@@ -50,16 +50,24 @@ class GotTypeReport extends StellaTypeReport {
       );
     }
 
+    final resType = switch ((type, typeReport.typeOrNull)) {
+      final (TypeSum, TypeSum) sums => TypeSum(
+          left: sums.$1.left ?? sums.$2.left,
+          right: sums.$1.right ?? sums.$2.right,
+        ),
+      _ => type,
+    };
+
     if (typeReport is ErrorTypeReport) {
       return typeReport.copyWith(
         typesContext: ctx,
-        recoveryType: type,
+        recoveryType: resType,
       );
     }
 
     return GotTypeReport(
       typesContext: ctx,
-      type: type,
+      type: resType,
     );
   }
 
@@ -93,6 +101,7 @@ enum StellaTypeError implements Exception {
   unexpectedInjection('ERROR_UNEXPECTED_INJECTION'),
   unexpectedPatternForType('ERROR_UNEXPECTED_PATTERN_FOR_TYPE'),
   ambiguousVariantType('ERROR_AMBIGUOUS_VARIANT_TYPE'),
+  ambiguousList('ERROR_AMBIGUOUS_LIST'),
   unexpectedVariant('ERROR_UNEXPECTED_VARIANT'),
   unexpectedVariantLabel('ERROR_UNEXPECTED_VARIANT_LABEL'),
   duplicateVariantTypeFields('ERROR_DUPLICATE_VARIANT_TYPE_FIELDS'),
@@ -162,6 +171,15 @@ enum StellaTypeError implements Exception {
     }
 
     return unexpectedTypeForExpression;
+  }
+
+  factory StellaTypeError.ambiguousType(StellaType type) {
+    return switch (type) {
+      TypeSum() => ambiguousSumType,
+      TypeVariant() => ambiguousVariantType,
+      TypeList() => ambiguousList,
+      _ => unexpectedTypeForExpression
+    };
   }
 
   const StellaTypeError(this.code);

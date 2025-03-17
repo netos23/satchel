@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:collection/collection.dart';
 import 'package:satchel/src/type_checker/visitor/top_level_function_visitor.dart';
 import 'package:satchel/src/util/extensions.dart';
@@ -636,19 +634,40 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       final retExp = ctx.returnExpr!.accept(this)!;
 
       return switch (retExp) {
-        GotTypeReport(:final type) => GotTypeReport(
-            typesContext: context.clone(),
-            type: Func(
-              args: argTypes
-                  .map((t) => t.typeOrNull)
-                  .whereType<StellaType>()
-                  .toList(),
-              returnType: type,
-              lambda: true,
-            ),
-          ),
-        // TODO: pass recovery val
-        _ => retExp,
+        GotTypeReport(:final type) => type.isStrict
+            ? GotTypeReport(
+                typesContext: context.clone(),
+                type: Func(
+                  args: argTypes
+                      .map((t) => t.typeOrNull)
+                      .whereType<StellaType>()
+                      .toList(),
+                  returnType: type,
+                  lambda: true,
+                ),
+              )
+            : ErrorTypeReport(
+                typesContext: context.clone(),
+                errorCode: StellaTypeError.ambiguousType(type),
+                message: 'Ambiguous type',
+                cause: retExp,
+              ),
+        ErrorTypeReport(:final typeOrNull) => typeOrNull?.let(
+              (it) => retExp.copyWith(
+                  typesContext: context.clone(),
+                  recoveryType: it.isStrict
+                      ? Func(
+                          args: argTypes
+                              .map((t) => t.typeOrNull)
+                              .whereType<StellaType>()
+                              .toList(),
+                          returnType: it,
+                          lambda: true,
+                        )
+                      : null,
+                ),
+            ) ??
+            retExp,
       };
     });
   }
@@ -871,7 +890,6 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       );
     }
 
-
     if (!recordType!.types.containsKey(label)) {
       return ErrorTypeReport(
         typesContext: context.clone(),
@@ -881,18 +899,53 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       );
     }
 
-
     return GotTypeReport(
       typesContext: context.clone(),
       type: recordType.types[label]!,
     );
   }
 
-
   /// T-Inl
   @override
   StellaTypeReport? visitInl(InlContext ctx) {
-    // TODO: implement visitInl
-    return super.visitInl(ctx);
+    final typeReport = ctx.expr_!.accept(this)!;
+
+    if (typeReport is ErrorTypeReport) {
+      return typeReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: TypeSum(
+          left: typeReport.typeOrNull,
+        ),
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeSum(
+        left: typeReport.typeOrNull,
+      ),
+    );
+  }
+
+  /// T-Inr
+  @override
+  StellaTypeReport? visitInr(InrContext ctx) {
+    final typeReport = ctx.expr_!.accept(this)!;
+
+    if (typeReport is ErrorTypeReport) {
+      return typeReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: TypeSum(
+          right: typeReport.typeOrNull,
+        ),
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeSum(
+        right: typeReport.typeOrNull,
+      ),
+    );
   }
 }

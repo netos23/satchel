@@ -12,6 +12,8 @@ sealed class StellaType implements TypeMatcher {
     return Func(args: [this], returnType: to);
   }
 
+  bool get isStrict => true;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -53,6 +55,9 @@ class TypeRef extends StellaType {
   });
 
   @override
+  bool get isStrict => type.isStrict;
+
+  @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       super == other &&
@@ -65,13 +70,17 @@ class TypeRef extends StellaType {
 }
 
 class TypeSum extends StellaType {
-  final StellaType left;
-  final StellaType right;
+  static const _equality = NullableEquality<StellaType?>();
+  final StellaType? left;
+  final StellaType? right;
 
   const TypeSum({
-    required this.left,
-    required this.right,
+    this.left,
+    this.right,
   });
+
+  @override
+  bool get isStrict => left != null && right != null;
 
   @override
   bool operator ==(Object other) =>
@@ -79,8 +88,8 @@ class TypeSum extends StellaType {
       super == other &&
           other is TypeSum &&
           runtimeType == other.runtimeType &&
-          left == other.left &&
-          right == other.right;
+          _equality.equals(left, other.left) &&
+          _equality.equals(right, other.right);
 
   @override
   int get hashCode => super.hashCode ^ left.hashCode ^ right.hashCode;
@@ -90,6 +99,9 @@ class Func extends StellaType {
   final bool lambda;
   final List<StellaType> args;
   final StellaType returnType;
+
+  @override
+  bool get isStrict => [...args, returnType].every((s) => s.isStrict);
 
   const Func({
     required this.args,
@@ -120,6 +132,9 @@ class TypeForAll extends StellaType {
   });
 
   @override
+  bool get isStrict => type.isStrict;
+
+  @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       super == other &&
@@ -140,6 +155,9 @@ class TypeRec extends StellaType {
     required this.variable,
     required this.type,
   });
+
+  @override
+  bool get isStrict => type.isStrict;
 
   @override
   bool operator ==(Object other) =>
@@ -166,6 +184,9 @@ class TypeTuple extends StellaType {
   });
 
   @override
+  bool get isStrict => types.every((s) => s?.isStrict ?? false);
+
+  @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       super == other &&
@@ -178,7 +199,7 @@ class TypeTuple extends StellaType {
 }
 
 class TypeRecord extends StellaType {
-  static const _equality = MapEquality<String,StellaType?>(
+  static const _equality = MapEquality<String, StellaType?>(
     values: NullableEquality<StellaType?>(),
   );
 
@@ -187,6 +208,9 @@ class TypeRecord extends StellaType {
   const TypeRecord({
     required this.types,
   });
+
+  @override
+  bool get isStrict => types.values.every((s) => s?.isStrict ?? false);
 
   @override
   bool operator ==(Object other) =>
@@ -201,15 +225,18 @@ class TypeRecord extends StellaType {
 }
 
 class TypeVariant extends StellaType {
-  static const _equality = MapEquality<String,StellaType?>(
+  static const _equality = MapEquality<String, StellaType?>(
     values: NullableEquality<StellaType?>(),
   );
 
-  final Map<String, StellaType> types;
+  final Map<String, StellaType?> types;
 
   const TypeVariant({
     required this.types,
   });
+
+  @override
+  bool get isStrict => types.values.every((s) => s?.isStrict ?? false);
 
   @override
   bool operator ==(Object other) =>
@@ -229,6 +256,9 @@ class TypeList extends StellaType {
   const TypeList({
     required this.type,
   });
+
+  @override
+  bool get isStrict => type.isStrict;
 
   @override
   bool operator ==(Object other) =>
