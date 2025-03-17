@@ -341,23 +341,17 @@ class TypeVariant extends StellaType {
       super.hashCode ^
       _keyEquality.hash(types.keys) ^
       _valueEquality.hash(types.values);
-
-  bool _compereStrictAndNonStrict(TypeVariant lhs, TypeVariant rhs) {
-    return rhs.types.entries.every(
-      (e) => lhs.types.containsKey(e.key) && lhs.types[e.key] == e.value,
-    );
-  }
 }
 
 class TypeList extends StellaType {
-  final StellaType type;
+  final StellaType? type;
 
   const TypeList({
-    required this.type,
+    this.type,
   });
 
   @override
-  bool get isStrict => type.isStrict;
+  bool get isStrict => type?.isStrict ?? false;
 
   @override
   bool operator ==(Object other) =>
@@ -365,7 +359,7 @@ class TypeList extends StellaType {
       super == other &&
           other is TypeList &&
           runtimeType == other.runtimeType &&
-          type == other.type;
+          (type == null || other.type == null || type == other.type);
 
   @override
   int get hashCode => super.hashCode ^ type.hashCode;

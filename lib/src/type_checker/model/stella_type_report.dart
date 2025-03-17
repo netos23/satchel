@@ -106,7 +106,7 @@ enum StellaTypeError implements Exception {
   unexpectedInjection('ERROR_UNEXPECTED_INJECTION'),
   unexpectedPatternForType('ERROR_UNEXPECTED_PATTERN_FOR_TYPE'),
   ambiguousVariantType('ERROR_AMBIGUOUS_VARIANT_TYPE'),
-  ambiguousList('ERROR_AMBIGUOUS_LIST'),
+  ambiguousList('ERROR_AMBIGUOUS_LIST_TYPE'),
   unexpectedVariant('ERROR_UNEXPECTED_VARIANT'),
   unexpectedVariantLabel('ERROR_UNEXPECTED_VARIANT_LABEL'),
   duplicateVariantTypeFields('ERROR_DUPLICATE_VARIANT_TYPE_FIELDS'),
@@ -122,7 +122,9 @@ enum StellaTypeError implements Exception {
     required StellaType expected,
     required StellaType? actual,
   }) {
-    if ((expected, actual) case (_, TypeList())) {
+    if ((expected, actual) case (TypeList(), TypeList())) {
+      return unexpectedTypeForExpression;
+    } else if ((expected, actual) case (_, TypeList())) {
       return unexpectedList;
     } else if ((expected, actual) case final (TypeTuple, TypeTuple) pair) {
       if (pair.$1.types.length != pair.$2.types.length) {
@@ -196,7 +198,8 @@ enum StellaTypeError implements Exception {
     return switch (type) {
       TypeSum() => ambiguousSumType,
       TypeVariant() => ambiguousVariantType,
-      TypeList() => ambiguousList,
+      TypeList(:final type?) => StellaTypeError.ambiguousType(type),
+      TypeList(:final type) => ambiguousList,
       TypeRef(:final type) => StellaTypeError.ambiguousType(type),
       Func(:final args, :final returnType) => [...args, returnType]
           .firstWhere((t) => !t.isStrict)
