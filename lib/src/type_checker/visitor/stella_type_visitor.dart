@@ -719,6 +719,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           recoveryType: type.returnType,
         );
       }
+
+      if (actualTypeReport is ErrorTypeReport) {
+        return actualTypeReport;
+      }
     }
 
     return GotTypeReport(
