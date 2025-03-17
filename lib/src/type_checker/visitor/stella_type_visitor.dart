@@ -1224,4 +1224,34 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       type: const Bool(),
     );
   }
+
+  @override
+  StellaTypeReport? visitTypeAsc(TypeAscContext ctx) {
+    final expression = ctx.expr_!.accept(this)!;
+    final type = ctx.type_!.accept(this)!;
+
+    if (expression is ErrorTypeReport) {
+      return expression;
+    }
+
+    if (type is ErrorTypeReport) {
+      return expression;
+    }
+
+    if (!expression.hasType(type.typeOrNull!)) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.unexpectedExpression(
+          expected: expression.typeOrNull!,
+          actual: type.typeOrNull,
+        ),
+        message: 'Bad cast',
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: type.typeOrNull!,
+    );
+  }
 }
