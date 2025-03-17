@@ -1,4 +1,8 @@
+import 'dart:collection';
+import 'dart:math';
+
 import 'package:collection/collection.dart';
+import 'package:satchel/src/util/equality.dart';
 
 interface class TypeMatcher {}
 
@@ -11,6 +15,8 @@ sealed class StellaType implements TypeMatcher {
     return Func(args: [this], returnType: to);
   }
 
+  bool get isStrict => true;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -22,10 +28,26 @@ sealed class StellaType implements TypeMatcher {
 
 class Bool extends StellaType {
   const Bool();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is Bool && runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => 1;
 }
 
 class Nat extends StellaType {
   const Nat();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is Nat && runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => 2;
 }
 
 class TypeRef extends StellaType {
@@ -34,6 +56,9 @@ class TypeRef extends StellaType {
   const TypeRef({
     required this.type,
   });
+
+  @override
+  bool get isStrict => type.isStrict;
 
   @override
   bool operator ==(Object other) =>
@@ -48,13 +73,17 @@ class TypeRef extends StellaType {
 }
 
 class TypeSum extends StellaType {
-  final StellaType left;
-  final StellaType right;
+  static const _equality = NullableEquality<StellaType?>();
+  final StellaType? left;
+  final StellaType? right;
 
   const TypeSum({
-    required this.left,
-    required this.right,
+    this.left,
+    this.right,
   });
+
+  @override
+  bool get isStrict => left != null && right != null;
 
   @override
   bool operator ==(Object other) =>
@@ -62,22 +91,25 @@ class TypeSum extends StellaType {
       super == other &&
           other is TypeSum &&
           runtimeType == other.runtimeType &&
-          left == other.left &&
-          right == other.right;
+          _equality.equals(left, other.left) &&
+          _equality.equals(right, other.right);
 
   @override
   int get hashCode => super.hashCode ^ left.hashCode ^ right.hashCode;
 }
 
 class Func extends StellaType {
-  final String? name;
+  final bool lambda;
   final List<StellaType> args;
   final StellaType returnType;
+
+  @override
+  bool get isStrict => [...args, returnType].every((s) => s.isStrict);
 
   const Func({
     required this.args,
     required this.returnType,
-    this.name,
+    this.lambda = false,
   });
 
   @override
@@ -91,8 +123,6 @@ class Func extends StellaType {
 
   @override
   int get hashCode => super.hashCode ^ args.hashCode ^ returnType.hashCode;
-
-  bool get lambda => name == null;
 }
 
 class TypeForAll extends StellaType {
@@ -103,6 +133,9 @@ class TypeForAll extends StellaType {
     required this.types,
     required this.type,
   });
+
+  @override
+  bool get isStrict => type.isStrict;
 
   @override
   bool operator ==(Object other) =>
@@ -127,6 +160,9 @@ class TypeRec extends StellaType {
   });
 
   @override
+  bool get isStrict => type.isStrict;
+
+  @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       super == other &&
@@ -140,11 +176,18 @@ class TypeRec extends StellaType {
 }
 
 class TypeTuple extends StellaType {
-  final List<StellaType> types;
+  static const _equality = ListEquality<StellaType?>(
+    NullableEquality<StellaType?>(),
+  );
+
+  final List<StellaType?> types;
 
   const TypeTuple({
     required this.types,
   });
+
+  @override
+  bool get isStrict => types.every((s) => s?.isStrict ?? false);
 
   @override
   bool operator ==(Object other) =>
@@ -152,18 +195,31 @@ class TypeTuple extends StellaType {
       super == other &&
           other is TypeTuple &&
           runtimeType == other.runtimeType &&
-          types.equals(other.types);
+          _equality.equals(types, other.types);
 
   @override
-  int get hashCode => super.hashCode ^ types.hashCode;
+  int get hashCode => super.hashCode ^ _equality.hash(types);
 }
 
 class TypeRecord extends StellaType {
-  final Map<String, StellaType> types;
+  static const _mapEquality = MapEquality<String, StellaType?>(
+    values: NullableEquality<StellaType?>(),
+  );
+  static const _keyEquality = IterableEquality<String>();
+  static const _valueEquality = IterableEquality<StellaType?>(
+    NullableEquality<StellaType?>(),
+  );
+
+  final LinkedHashMap<String, StellaType?> types;
+  final bool instance;
 
   const TypeRecord({
     required this.types,
+    this.instance = false,
   });
+
+  @override
+  bool get isStrict => types.values.every((s) => s?.isStrict ?? false);
 
   @override
   bool operator ==(Object other) =>
@@ -171,37 +227,131 @@ class TypeRecord extends StellaType {
       super == other &&
           other is TypeRecord &&
           runtimeType == other.runtimeType &&
-          MapEquality().equals(types, other.types);
+          ((instance || other.instance)
+              ? _mapEquality.equals(types, other.types)
+              : _keyEquality.equals(types.keys, other.types.keys) &&
+                  _valueEquality.equals(types.values, other.types.values));
 
   @override
-  int get hashCode => super.hashCode ^ types.hashCode;
+  int get hashCode {
+    final entries = types.entries.toList()..sortBy((e) => e.key);
+
+    return super.hashCode ^
+        _keyEquality.hash(entries.map((e) => e.key)) ^
+        _valueEquality.hash(entries.map((e) => e.value));
+  }
+}
+
+enum TypeVariantEquality {
+  equals,
+  missingDataForLabel,
+  unexpectedDataForNullableLabel,
+  unexpectedVariantLabel,
+  notEqual
 }
 
 class TypeVariant extends StellaType {
-  final Map<String, StellaType> types;
+  static const _keyEquality = IterableEquality<String>();
+  static const _valueEquality = IterableEquality<StellaType?>(
+    NullableEquality<StellaType?>(),
+  );
+
+  final LinkedHashMap<String, StellaType?> types;
+  final bool strict;
 
   const TypeVariant({
     required this.types,
+    this.strict = true,
   });
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      super == other &&
-          other is TypeVariant &&
-          runtimeType == other.runtimeType &&
-          MapEquality().equals(types, other.types);
+  factory TypeVariant.merge(Iterable<TypeVariant> variants) {
+    return TypeVariant(
+      types: LinkedHashMap.fromIterables(
+        variants.expand((e) => e.types.keys),
+        variants.expand((e) => e.types.values),
+      ),
+      strict: false,
+    );
+  }
 
   @override
-  int get hashCode => super.hashCode ^ types.hashCode;
+  bool get isStrict => strict;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+
+    if (super != other ||
+        other is! TypeVariant ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+
+    return equals(this, other) == TypeVariantEquality.equals;
+  }
+
+  static TypeVariantEquality equals(TypeVariant lhs, TypeVariant rhs) {
+    if (lhs.strict && rhs.strict) {
+      return _keyEquality.equals(lhs.types.keys, rhs.types.keys) &&
+              _valueEquality.equals(lhs.types.values, rhs.types.values)
+          ? TypeVariantEquality.equals
+          : TypeVariantEquality.notEqual;
+    }
+
+    if (!lhs.strict && !rhs.strict) {
+      return rhs.types.entries.every((e) {
+        final type = lhs.types[e.key];
+        return type == null || type == e.value;
+      })
+          ? TypeVariantEquality.equals
+          : TypeVariantEquality.notEqual;
+    }
+
+    final strict = lhs.strict ? lhs : rhs;
+    final nonStrict = lhs.strict ? rhs : lhs;
+
+    for (final nonStrictEntry in nonStrict.types.entries) {
+      if (!strict.types.containsKey(nonStrictEntry.key)) {
+        return TypeVariantEquality.unexpectedVariantLabel;
+      }
+
+      final expected = strict.types[nonStrictEntry.key];
+      final actual = nonStrictEntry.value;
+
+      switch ((expected, actual)) {
+        case (null, StellaType()):
+          return TypeVariantEquality.unexpectedDataForNullableLabel;
+        case (StellaType(), null):
+          return TypeVariantEquality.missingDataForLabel;
+        case final (StellaType, StellaType) types:
+          if (types.$1 != types.$2) {
+            return TypeVariantEquality.notEqual;
+          }
+        default:
+      }
+    }
+
+    return TypeVariantEquality.equals;
+  }
+
+  @override
+  int get hashCode =>
+      super.hashCode ^
+      _keyEquality.hash(types.keys) ^
+      _valueEquality.hash(types.values);
 }
 
 class TypeList extends StellaType {
-  final StellaType type;
+  final StellaType? type;
 
   const TypeList({
-    required this.type,
+    this.type,
   });
+
+  @override
+  bool get isStrict => type?.isStrict ?? false;
 
   @override
   bool operator ==(Object other) =>
@@ -209,7 +359,7 @@ class TypeList extends StellaType {
       super == other &&
           other is TypeList &&
           runtimeType == other.runtimeType &&
-          type == other.type;
+          (type == null || other.type == null || type == other.type);
 
   @override
   int get hashCode => super.hashCode ^ type.hashCode;
@@ -217,6 +367,14 @@ class TypeList extends StellaType {
 
 class Unit extends StellaType {
   const Unit();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is Unit && runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => 3;
 }
 
 class Top extends StellaType {

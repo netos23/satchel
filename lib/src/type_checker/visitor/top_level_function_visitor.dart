@@ -1,12 +1,17 @@
-import 'package:satchel/src/type_checker/model/stella_types.dart';
-import 'package:satchel/src/type_checker/visitor/stella_types_mapper_visitor.dart';
+
 
 import '../../antlr/StellaParser.dart';
 import '../../antlr/StellaParserBaseVisitor.dart';
+import '../model/stella_type_report.dart';
+import '../model/stella_types.dart';
 import '../model/stella_types_context.dart';
+import 'stella_type_visitor.dart';
 
 class TopLevelFunctionVisitor
     extends StellaParserBaseVisitor<StellaTypesContext> {
+
+  TopLevelFunctionVisitor();
+
   @override
   StellaTypesContext defaultResult() {
     return StellaTypesContext.root();
@@ -23,17 +28,30 @@ class TopLevelFunctionVisitor
   @override
   StellaTypesContext visitDeclFun(DeclFunContext ctx) {
     final args = ctx.paramDecls
-        .map((ctx) => ctx.accept(StellaTypesMapperVisitor()))
-        .whereType<StellaType>()
+        .map((ctx) => ctx.accept(StellaTypeVisitor()))
+        .whereType<StellaTypeReport>()
         .toList(growable: false);
 
-    final returnType = ctx.returnType?.accept(
-      StellaTypesMapperVisitor(),
+    if (args.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+      throw error;
+    }
+
+
+    final returnType = ctx.returnType!.accept(
+      StellaTypeVisitor(),
     );
+
+
+    if(returnType is ErrorTypeReport){
+      throw returnType;
+    }
 
     return StellaTypesContext.single(
       ctx.name!.text!,
-      Func(args: args, returnType: returnType ?? const Unit()),
+      Func(
+        args: args.map((t) => t.typeOrNull).whereType<StellaType>().toList(),
+        returnType: returnType?.typeOrNull ?? const Unit(),
+      ),
     );
   }
 }
