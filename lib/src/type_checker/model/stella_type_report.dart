@@ -76,6 +76,11 @@ class GotTypeReport extends StellaTypeReport {
 
   @override
   StellaType? get typeOrNull => type;
+
+  @override
+  String toString() {
+    return 'GotTypeReport{type: $type}';
+  }
 }
 
 enum StellaTypeError implements Exception {
@@ -275,5 +280,10 @@ class ErrorTypeReport extends StellaTypeReport {
       cause: cause ?? this.cause,
       recoveryType: recoveryType ?? this.recoveryType,
     );
+  }
+
+  @override
+  String toString() {
+    return 'ErrorTypeReport{errorCode: $errorCode, message: $message, cause: $cause, recoveryType: $recoveryType}';
   }
 }

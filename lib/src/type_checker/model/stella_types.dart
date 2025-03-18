@@ -36,6 +36,11 @@ class Bool extends StellaType {
 
   @override
   int get hashCode => 1;
+
+  @override
+  String toString() {
+    return 'Bool{}';
+  }
 }
 
 class Nat extends StellaType {
@@ -48,6 +53,11 @@ class Nat extends StellaType {
 
   @override
   int get hashCode => 2;
+
+  @override
+  String toString() {
+    return 'Nat{}';
+  }
 }
 
 class TypeRef extends StellaType {
@@ -96,6 +106,11 @@ class TypeSum extends StellaType {
 
   @override
   int get hashCode => super.hashCode ^ left.hashCode ^ right.hashCode;
+
+  @override
+  String toString() {
+    return 'TypeSum{left: $left, right: $right}';
+  }
 }
 
 class Func extends StellaType {
@@ -123,6 +138,11 @@ class Func extends StellaType {
 
   @override
   int get hashCode => super.hashCode ^ args.hashCode ^ returnType.hashCode;
+
+  @override
+  String toString() {
+    return 'Func{lambda: $lambda, args: $args, returnType: $returnType}';
+  }
 }
 
 class TypeForAll extends StellaType {
@@ -148,6 +168,11 @@ class TypeForAll extends StellaType {
 
   @override
   int get hashCode => super.hashCode ^ types.hashCode ^ type.hashCode;
+
+  @override
+  String toString() {
+    return 'TypeForAll{types: $types, type: $type}';
+  }
 }
 
 class TypeRec extends StellaType {
@@ -173,6 +198,11 @@ class TypeRec extends StellaType {
 
   @override
   int get hashCode => super.hashCode ^ variable.hashCode ^ type.hashCode;
+
+  @override
+  String toString() {
+    return 'TypeRec{variable: $variable, type: $type}';
+  }
 }
 
 class TypeTuple extends StellaType {
@@ -199,6 +229,11 @@ class TypeTuple extends StellaType {
 
   @override
   int get hashCode => super.hashCode ^ _equality.hash(types);
+
+  @override
+  String toString() {
+    return 'TypeTuple{types: $types}';
+  }
 }
 
 class TypeRecord extends StellaType {
@@ -239,6 +274,11 @@ class TypeRecord extends StellaType {
     return super.hashCode ^
         _keyEquality.hash(entries.map((e) => e.key)) ^
         _valueEquality.hash(entries.map((e) => e.value));
+  }
+
+  @override
+  String toString() {
+    return 'TypeRecord{types: $types, instance: $instance}';
   }
 }
 
@@ -341,6 +381,11 @@ class TypeVariant extends StellaType {
       super.hashCode ^
       _keyEquality.hash(types.keys) ^
       _valueEquality.hash(types.values);
+
+  @override
+  String toString() {
+    return 'TypeVariant{types: $types, strict: $strict}';
+  }
 }
 
 class TypeList extends StellaType {
@@ -363,6 +408,11 @@ class TypeList extends StellaType {
 
   @override
   int get hashCode => super.hashCode ^ type.hashCode;
+
+  @override
+  String toString() {
+    return 'TypeList{type: $type}';
+  }
 }
 
 class Unit extends StellaType {
@@ -375,6 +425,11 @@ class Unit extends StellaType {
 
   @override
   int get hashCode => 3;
+
+  @override
+  String toString() {
+    return 'Unit{}';
+  }
 }
 
 class Top extends StellaType {
@@ -404,4 +459,9 @@ class TypeVar extends StellaType {
 
   @override
   int get hashCode => super.hashCode ^ name.hashCode;
+
+  @override
+  String toString() {
+    return 'TypeVar{name: $name}';
+  }
 }
