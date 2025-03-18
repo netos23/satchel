@@ -1343,4 +1343,149 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       );
     }
   }
+
+  @override
+  StellaTypeReport? visitLet(LetContext ctx) {
+    return withContext((context) {
+      try {
+        final patterns = ctx.patternBinds.map((c) {
+          final expr = c.rhs!.accept(this)!;
+
+          if (expr is ErrorTypeReport) {
+            throw expr;
+          }
+
+          return (expr, c.pat!.accept(StellaPatternVisitor(expr.typeOrNull))!);
+        }).toList();
+
+        if (patterns.isEmpty) {
+          return ErrorTypeReport(
+            typesContext: context.clone(),
+            errorCode: StellaTypeError.illegalEmptyMatching,
+          );
+        }
+        final clone = context.clone();
+        final typeRes = patterns.firstComponent
+            .reduce((a, b) => a.inferTypeReport(b, clone));
+
+        if (typeRes is ErrorTypeReport) {
+          throw typeRes;
+        }
+
+        final checker = StellaPatternChecker.forType(typeRes.typeOrNull!);
+
+        if (!checker.checkExhaustive(patterns.secondComponent.toList())) {
+          return ErrorTypeReport(
+            typesContext: context.clone(),
+            errorCode: StellaTypeError.nonExhaustiveMatchPatterns,
+          );
+        }
+
+        final innerContext = patterns.secondComponent
+            .map((p) => p.patternContext)
+            .reduce((a, b) => a.merge(b));
+        context.add(innerContext);
+
+        return ctx.body!.accept(this)!;
+      } on ErrorTypeReport catch (report) {
+        return report;
+      } on StateError catch (error) {
+        return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.duplicateRecordPatternFields,
+          message: error.message,
+        );
+      } on UnsupportedError catch (error) {
+        return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.unexpectedNonNullableVariantPattern,
+          message: error.message,
+        );
+      } on RangeError catch (error) {
+        return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.unexpectedNullableVariantPattern,
+          message: error.message,
+        );
+      } on ArgumentError catch (error) {
+        return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.unexpectedPatternForType,
+          message: error.message,
+        );
+      }
+    });
+  }
+  @override
+  StellaTypeReport? visitLetRec(LetRecContext ctx) {
+    return withContext((context) {
+      try {
+        final patterns = ctx.patternBinds.map((c) {
+          final expr = c.rhs!.accept(this)!;
+
+          if (expr is ErrorTypeReport) {
+            throw expr;
+          }
+
+          return (expr, c.pat!.accept(StellaPatternVisitor(expr.typeOrNull))!);
+        }).toList();
+
+        if (patterns.isEmpty) {
+          return ErrorTypeReport(
+            typesContext: context.clone(),
+            errorCode: StellaTypeError.illegalEmptyMatching,
+          );
+        }
+        final clone = context.clone();
+        final typeRes = patterns.firstComponent
+            .reduce((a, b) => a.inferTypeReport(b, clone));
+
+        if (typeRes is ErrorTypeReport) {
+          throw typeRes;
+        }
+
+        final checker = StellaPatternChecker.forType(typeRes.typeOrNull!);
+
+        if (!checker.checkExhaustive(patterns.secondComponent.toList())) {
+          return ErrorTypeReport(
+            typesContext: context.clone(),
+            errorCode: StellaTypeError.nonExhaustiveMatchPatterns,
+          );
+        }
+
+        final innerContext = patterns.secondComponent
+            .map((p) => p.patternContext)
+            .reduce((a, b) => a.merge(b));
+        context.add(innerContext);
+
+        return ctx.body!.accept(this)!;
+      } on ErrorTypeReport catch (report) {
+        return report;
+      } on StateError catch (error) {
+        return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.duplicateRecordPatternFields,
+          message: error.message,
+        );
+      } on UnsupportedError catch (error) {
+        return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.unexpectedNonNullableVariantPattern,
+          message: error.message,
+        );
+      } on RangeError catch (error) {
+        return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.unexpectedNullableVariantPattern,
+          message: error.message,
+        );
+      } on ArgumentError catch (error) {
+        return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.unexpectedPatternForType,
+          message: error.message,
+        );
+      }
+    });
+  }
 }

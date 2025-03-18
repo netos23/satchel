@@ -1,3 +1,6 @@
+import 'dart:collection';
+import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:satchel/src/type_checker/model/stella_types.dart';
 import 'package:satchel/src/type_checker/model/stella_types_context.dart';
@@ -90,7 +93,13 @@ class UnitStellaPattern implements StellaPattern {
 
 abstract class NatStellaPattern implements StellaPattern {}
 
-class ConstNatStellaPattern implements StellaPattern {
+abstract class NatEvalStellaPattern implements NatStellaPattern {
+  int? get eval;
+
+  int get depth;
+}
+
+class ConstNatStellaPattern implements NatEvalStellaPattern {
   final int value;
 
   ConstNatStellaPattern(this.value);
@@ -110,9 +119,15 @@ class ConstNatStellaPattern implements StellaPattern {
 
   @override
   int get hashCode => value.hashCode;
+
+  @override
+  int? get eval => value;
+
+  @override
+  int get depth => 1;
 }
 
-class SuccNatStellaPattern implements StellaPattern {
+class SuccNatStellaPattern implements NatEvalStellaPattern {
   final NatStellaPattern next;
 
   SuccNatStellaPattern(this.next);
@@ -121,7 +136,7 @@ class SuccNatStellaPattern implements StellaPattern {
   StellaTypesContext get patternContext => next.patternContext;
 
   @override
-  bool get wildCard => next.wildCard;
+  bool get wildCard => false;
 
   @override
   bool operator ==(Object other) =>
@@ -132,6 +147,20 @@ class SuccNatStellaPattern implements StellaPattern {
 
   @override
   int get hashCode => next.hashCode;
+
+  @override
+  int? get eval {
+    final pattern = next;
+    return (pattern is NatEvalStellaPattern && pattern.eval != null)
+        ? (1 + pattern.eval!)
+        : null;
+  }
+
+  @override
+  int get depth {
+    final pattern = next;
+    return 1 + ((pattern is NatEvalStellaPattern) ? pattern.depth! : 0);
+  }
 }
 
 abstract class SumStellaPattern implements StellaPattern {}
@@ -282,7 +311,7 @@ class ConsListStellaPattern implements ListStellaPattern {
       );
 
   @override
-  bool get wildCard => [head, tail].every((e) => e.wildCard);
+  bool get wildCard => false;
 
   @override
   bool operator ==(Object other) =>
@@ -312,7 +341,7 @@ class _VariantStellaPattern implements VariantStellaPattern {
       pattern?.patternContext ?? StellaTypesContext();
 
   @override
-  bool get wildCard => pattern?.wildCard ?? false;
+  bool get wildCard => false;
 
   @override
   bool operator ==(Object other) =>
@@ -491,13 +520,26 @@ class _UnitStellaPatternChecker implements StellaPatternChecker {
   }
 }
 
-class _NatStellaPatternChecker extends _WildCardStellaPatternChecker {
+class _NatStellaPatternChecker implements StellaPatternChecker {
   @override
   bool checkExhaustive(List<StellaPattern> patterns) {
     if (patterns.any((p) => p is! NatStellaPattern)) {
       throw ArgumentError('Unexpected pattern type');
     }
 
-    return super.checkExhaustive(patterns);
+    if (patterns.any((p) => p.wildCard)) {
+      return true;
+    }
+
+    final nats = patterns.cast<NatEvalStellaPattern>();
+
+    final depths = SplayTreeSet.of(
+      nats.where((n) => n.eval == null).map((n) => n.depth),
+    );
+
+    return nats.any((n) => n.eval == 0) &&
+        depths.isNotEmpty &&
+        Iterable.generate(depths.max, (i) => i + 1)
+            .every((e) => depths.contains(e));
   }
 }

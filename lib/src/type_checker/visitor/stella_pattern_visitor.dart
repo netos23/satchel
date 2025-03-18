@@ -64,7 +64,7 @@ class StellaPatternVisitor extends StellaParserBaseVisitor<StellaPattern> {
       throw ArgumentError('Wrong pattern for type');
     }
 
-    final nested = ctx.accept(this);
+    final nested = ctx.pattern_!.accept(this);
 
     if (nested is! NatStellaPattern) {
       throw ArgumentError('Wrong pattern');
@@ -176,7 +176,7 @@ class StellaPatternVisitor extends StellaParserBaseVisitor<StellaPattern> {
     }
 
     final head = ctx.head!.accept(StellaPatternVisitor(list.type))!;
-    final tail = ctx.tail!.accept(StellaPatternVisitor(list.type))!;
+    final tail = ctx.tail!.accept(StellaPatternVisitor(list))!;
 
     return ConsListStellaPattern(head, tail);
   }
