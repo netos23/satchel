@@ -93,6 +93,7 @@ enum StellaTypeError implements Exception {
   notARecord('ERROR_NOT_A_RECORD'),
   duplicateRecordFields('ERROR_DUPLICATE_RECORD_FIELDS '),
   duplicateRecordTypeFields('ERROR_DUPLICATE_RECORD_TYPE_FIELDS'),
+  duplicateRecordPatternFields('ERROR_DUPLICATE_RECORD_PATTERN_FIELDS'),
   unexpectedFieldAccess('ERROR_UNEXPECTED_FIELD_ACCESS'),
   unexpectedTuple('ERROR_UNEXPECTED_TUPLE'),
   tupleIndexOutOfBounds('ERROR_TUPLE_INDEX_OUT_OF_BOUNDS'),
@@ -111,6 +112,8 @@ enum StellaTypeError implements Exception {
   unexpectedVariantLabel('ERROR_UNEXPECTED_VARIANT_LABEL'),
   duplicateVariantTypeFields('ERROR_DUPLICATE_VARIANT_TYPE_FIELDS'),
   incorrectNumberOfArguments('ERROR_INCORRECT_NUMBER_OF_ARGUMENTS'),
+  unexpectedNonNullableVariantPattern('ERROR_UNEXPECTED_NON_NULLARY_VARIANT_PATTERN'),
+  unexpectedNullableVariantPattern('ERROR_UNEXPECTED_NULLARY_VARIANT_PATTERN'),
   unexpectedNumberOfParametersInLambda(
     'ERROR_UNEXPECTED_NUMBER_OF_PARAMETERS_IN_LAMBDA',
   ),
