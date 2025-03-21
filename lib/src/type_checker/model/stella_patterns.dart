@@ -356,7 +356,7 @@ class _VariantStellaPattern implements VariantStellaPattern {
 }
 
 abstract class StellaPatternChecker {
-  factory StellaPatternChecker.forType(StellaType type) {
+  factory StellaPatternChecker.forType(StellaType? type) {
     return switch (type) {
       Bool() => _BoolStellaPatternChecker(),
       Nat() => _NatStellaPatternChecker(),
@@ -450,7 +450,7 @@ class _ListStellaPatternChecker implements StellaPatternChecker {
         headsExhaustive &&
         groups.values
             .map((c) => c.map((e) => e.tail).toList())
-            .every((g) => checkExhaustive(g));
+            .any((g) => checkExhaustive(g));
   }
 }
 

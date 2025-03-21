@@ -75,13 +75,19 @@ class StellaPatternVisitor extends StellaParserBaseVisitor<StellaPattern> {
 
   @override
   StellaPattern? visitPatternAsc(PatternAscContext ctx) {
-    final type = ctx.type_!.accept(StellaTypeVisitor());
+    final type = ctx.type_!.accept(StellaTypeVisitor())!;
 
     if (type is ErrorTypeReport) {
       throw type;
     }
 
-    return ctx.pattern_?.accept(StellaPatternVisitor(type?.typeOrNull));
+    final expected = patternForType;
+    if(expected != null && !type.hasType(expected)){
+      throw ArgumentError('Wrong pattern for type');
+    }
+
+
+    return ctx.pattern_?.accept(StellaPatternVisitor(type.typeOrNull));
   }
 
   @override
@@ -206,5 +212,10 @@ class StellaPatternVisitor extends StellaParserBaseVisitor<StellaPattern> {
     final pattern = ctx.pattern_?.accept(StellaPatternVisitor(type));
 
     return VariantStellaPattern(label, pattern);
+  }
+
+  @override
+  StellaPattern? visitParenthesisedPattern(ParenthesisedPatternContext ctx) {
+    return ctx.pattern_?.accept(this);
   }
 }

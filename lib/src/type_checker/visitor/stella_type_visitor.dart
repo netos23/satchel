@@ -1261,12 +1261,8 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   StellaTypeReport? visitMatch(MatchContext ctx) {
     final expr = ctx.expr_!.accept(this)!;
 
-    if (expr is ErrorTypeReport) {
-      return expr;
-    }
-
-    final type = expr.typeOrNull!;
-    if (!type.isStrict) {
+    final type = expr.typeOrNull;
+    if (type != null && !type.isStrict) {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.ambiguousType(type),
@@ -1274,6 +1270,11 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         cause: expr,
       );
     }
+
+    if (expr is ErrorTypeReport) {
+      return expr;
+    }
+
     try {
       final patterns = ctx.cases
           .map((c) => c.pattern_!.accept(StellaPatternVisitor(type))!)
@@ -1307,6 +1308,15 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
 
       if (expr.whereType<ErrorTypeReport>().firstOrNull case final error?) {
         return error;
+      }
+
+      if (expr.where((e) => !(e.typeOrNull?.isStrict ?? true)).firstOrNull
+          case final error?) {
+        return ErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.ambiguousType(error.typeOrNull!),
+          message: 'Ambiguous type',
+        );
       }
 
       final clone = context.clone();
@@ -1355,7 +1365,16 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
             throw expr;
           }
 
-          return (expr, c.pat!.accept(StellaPatternVisitor(expr.typeOrNull))!);
+          if (expr.typeOrNull?.isStrict case false) {
+            throw ErrorTypeReport(
+              typesContext: context.clone(),
+              errorCode: StellaTypeError.ambiguousType(expr.typeOrNull!),
+              message: 'Ambiguous type',
+            );
+          }
+
+          final pattern = c.pat!.accept(StellaPatternVisitor(expr.typeOrNull))!;
+          return (expr, pattern);
         }).toList();
 
         if (patterns.isEmpty) {
@@ -1416,6 +1435,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       }
     });
   }
+
   @override
   StellaTypeReport? visitLetRec(LetRecContext ctx) {
     return withContext((context) {
