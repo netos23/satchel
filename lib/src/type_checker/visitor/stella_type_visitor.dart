@@ -1040,13 +1040,13 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       );
     }
 
-    final retType = type.returnType;
+    final expectedType = type.args.single;
 
-    if (!funcReport.hasType(retType >> retType)) {
+    if (!funcReport.hasType(expectedType >> expectedType)) {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
-          expected: retType >> retType,
+          expected: expectedType >> expectedType,
           actual: type,
         ),
         message: 'Can`t apply fix, to bad function type',
@@ -1055,7 +1055,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
 
     return GotTypeReport(
       typesContext: context.clone(),
-      type: retType,
+      type: expectedType,
     );
   }
 
