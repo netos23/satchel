@@ -173,7 +173,7 @@ class SuccNatStellaPattern implements NatEvalStellaPattern {
   @override
   int get depth {
     final pattern = next;
-    return 1 + ((pattern is NatEvalStellaPattern) ? pattern.depth! : 0);
+    return 1 + ((pattern is NatEvalStellaPattern) ? pattern.depth : 0);
   }
 
   @override
