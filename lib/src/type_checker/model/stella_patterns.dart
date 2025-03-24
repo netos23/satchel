@@ -1,10 +1,10 @@
 import 'dart:collection';
-import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:satchel/src/type_checker/model/stella_types.dart';
-import 'package:satchel/src/type_checker/model/stella_types_context.dart';
-import 'package:satchel/src/util/extensions.dart';
+import '../../util/extensions.dart';
+
+import 'stella_types.dart';
+import 'stella_types_context.dart';
 
 const _equality = DeepCollectionEquality();
 
@@ -12,6 +12,8 @@ abstract interface class StellaPattern {
   StellaTypesContext get patternContext;
 
   bool get wildCard;
+
+  Type get patternType;
 }
 
 class IdentifierPattern
@@ -49,6 +51,9 @@ class IdentifierPattern
 
   @override
   int get hashCode => name.hashCode;
+
+  @override
+  Type get patternType => type.runtimeType;
 }
 
 abstract class BoolStellaPattern implements StellaPattern {}
@@ -73,6 +78,9 @@ class ValueBoolStellaPattern implements BoolStellaPattern {
 
   @override
   int get hashCode => value.hashCode;
+
+  @override
+  Type get patternType => Bool;
 }
 
 class UnitStellaPattern implements StellaPattern {
@@ -89,6 +97,9 @@ class UnitStellaPattern implements StellaPattern {
 
   @override
   int get hashCode => 0;
+
+  @override
+  Type get patternType => Unit;
 }
 
 abstract class NatStellaPattern implements StellaPattern {}
@@ -125,6 +136,9 @@ class ConstNatStellaPattern implements NatEvalStellaPattern {
 
   @override
   int get depth => 1;
+
+  @override
+  Type get patternType => Nat;
 }
 
 class SuccNatStellaPattern implements NatEvalStellaPattern {
@@ -161,6 +175,9 @@ class SuccNatStellaPattern implements NatEvalStellaPattern {
     final pattern = next;
     return 1 + ((pattern is NatEvalStellaPattern) ? pattern.depth! : 0);
   }
+
+  @override
+  Type get patternType => Nat;
 }
 
 abstract class SumStellaPattern implements StellaPattern {}
@@ -185,6 +202,9 @@ class InlStellaPattern implements SumStellaPattern {
 
   @override
   int get hashCode => 1 ^ left.hashCode;
+
+  @override
+  Type get patternType => TypeSum;
 }
 
 class InrStellaPattern implements SumStellaPattern {
@@ -207,6 +227,9 @@ class InrStellaPattern implements SumStellaPattern {
 
   @override
   int get hashCode => 7 ^ right.hashCode;
+
+  @override
+  Type get patternType => TypeSum;
 }
 
 abstract class TupleStellaPattern implements StellaPattern {
@@ -239,6 +262,9 @@ class _TupleStelaPattern implements TupleStellaPattern {
 
   @override
   int get hashCode => _equality.hash(patterns);
+
+  @override
+  Type get patternType => TypeTuple;
 }
 
 abstract class RecordStellaPattern implements StellaPattern {
@@ -269,6 +295,9 @@ class _RecordStellaPattern implements RecordStellaPattern {
 
   @override
   int get hashCode => _equality.hash(patterns);
+
+  @override
+  Type get patternType => TypeRecord;
 }
 
 abstract class ListStellaPattern implements StellaPattern {}
@@ -296,6 +325,9 @@ class ListListStellaPattern implements ListStellaPattern {
 
   @override
   int get hashCode => _equality.hash(patterns);
+
+  @override
+  Type get patternType => TypeList;
 }
 
 class ConsListStellaPattern implements ListStellaPattern {
@@ -323,6 +355,9 @@ class ConsListStellaPattern implements ListStellaPattern {
 
   @override
   int get hashCode => head.hashCode ^ tail.hashCode;
+
+  @override
+  Type get patternType => TypeList;
 }
 
 abstract class VariantStellaPattern implements StellaPattern {
@@ -353,6 +388,9 @@ class _VariantStellaPattern implements VariantStellaPattern {
 
   @override
   int get hashCode => label.hashCode ^ pattern.hashCode;
+
+  @override
+  Type get patternType => TypeVariant;
 }
 
 abstract class StellaPatternChecker {
@@ -362,7 +400,7 @@ abstract class StellaPatternChecker {
       Nat() => _NatStellaPatternChecker(),
       Unit() => _UnitStellaPatternChecker(),
       TypeSum() => _SumStellaPatternChecker(type),
-      // TypeTuple() => throw UnimplementedError(),
+      // TypeTuple() => _TupleStellaPatternChecker(type),
       // TypeRecord() => throw UnimplementedError(),
       TypeList() => _ListStellaPatternChecker(type),
       TypeVariant() => _VariantStellaPatternChecker(type),
@@ -486,6 +524,110 @@ class _VariantStellaPatternChecker implements StellaPatternChecker {
               ) ??
               true,
         );
+  }
+}
+
+class _TupleStellaPatternChecker implements StellaPatternChecker {
+  final TypeTuple type;
+
+  _TupleStellaPatternChecker(this.type);
+
+  @override
+  bool checkExhaustive(List<StellaPattern> patterns) {
+    if (patterns.any((p) => p is! TupleStellaPattern)) {
+      throw ArgumentError('Unexpected pattern type');
+    }
+
+    final tuplePatterns = patterns.whereType<_TupleStelaPattern>();
+
+    if (tuplePatterns.any((t) => t.patterns.length != patterns.length)) {
+      throw ArgumentError('Unexpected pattern type');
+    }
+
+    if (patterns.any((p) => p.wildCard)) {
+      return true;
+    }
+
+    bool checkExhaustiveSubPatterns(
+      Iterable<List<StellaPattern>> tuples,
+      List<StellaType> types,
+    ) {
+      if (tuples.any((p) => tuples.length == 1)) {
+        return StellaPatternChecker.forType(types.first)
+            .checkExhaustive(tuples.map((t) => t.first).toList());
+      }
+
+      final groups = tuples.groupListsBy((p) => p.first);
+
+      final keyExhaustive =
+          StellaPatternChecker.forType(types.first).checkExhaustive(
+        groups.keys.toList(),
+      );
+
+      return keyExhaustive &&
+          groups.values
+              .map((c) => c.map((e) => e.sublist(1)))
+              .any((g) => checkExhaustiveSubPatterns(g, types.sublist(1)));
+    }
+
+    return checkExhaustiveSubPatterns(
+      tuplePatterns.map((p) => p.patterns),
+      type.types.whereType<StellaType>().toList(),
+    );
+  }
+}
+
+class _RecordStellaPatternChecker implements StellaPatternChecker {
+  final TypeRecord type;
+
+  _RecordStellaPatternChecker(this.type);
+
+  @override
+  bool checkExhaustive(List<StellaPattern> patterns) {
+    if (patterns.any((p) => p is! RecordStellaPattern)) {
+      throw ArgumentError('Unexpected pattern type');
+    }
+
+    final recordPatterns = patterns.whereType<_RecordStellaPattern>();
+
+    if (recordPatterns.any((t) => t.patterns.length != patterns.length)) {
+      throw ArgumentError('Unexpected pattern type');
+    }
+
+    if (patterns.any((p) => p.wildCard)) {
+      return true;
+    }
+
+    bool checkExhaustiveSubPatterns(
+      Iterable<Map<String, StellaPattern>> tuples,
+      Map<String, StellaType> types,
+    ) {
+      throw UnimplementedError();
+    }
+    //   if (tuples.any((p) => tuples.length == 1)) {
+    //     return StellaPatternChecker.forType()
+    //         .checkExhaustive(tuples.map((t) => t.first).toList());
+    //   }
+    //
+    //   final groups = tuples.groupListsBy((p) => p.first);
+    //
+    //   final keyExhaustive =
+    //       StellaPatternChecker.forType(types.first).checkExhaustive(
+    //     groups.keys.toList(),
+    //   );
+    //
+    //   return keyExhaustive &&
+    //       groups.values
+    //           .map((c) => c.map((e) => e.sublist(1)))
+    //           .any((g) => checkExhaustiveSubPatterns(g, types.sublist(1)));
+    // }
+    //
+    // return checkExhaustiveSubPatterns(
+    //   recordPatterns.map((p) => p.patterns),
+    //   type.types.cast<String, StellaType>(),
+    // );
+
+    throw UnimplementedError();
   }
 }
 

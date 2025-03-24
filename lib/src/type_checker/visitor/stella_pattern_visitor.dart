@@ -10,7 +10,7 @@ import '../model/stella_patterns.dart';
 class StellaPatternVisitor extends StellaParserBaseVisitor<StellaPattern> {
   final StellaType? patternForType;
 
-  StellaPatternVisitor(this.patternForType);
+  StellaPatternVisitor([this.patternForType]);
 
   @override
   StellaPattern? visitPatternVar(PatternVarContext ctx) {
