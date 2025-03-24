@@ -105,6 +105,7 @@ enum StellaTypeError implements Exception {
   unexpectedTupleLength('ERROR_UNEXPECTED_TUPLE_LENGTH'),
   notATuple('ERROR_NOT_A_TUPLE'),
   ambiguousSumType('ERROR_AMBIGUOUS_SUM_TYPE'),
+  ambiguousPatternType('ERROR_AMBIGUOUS_PATTERN_TYPE'),
   illegalEmptyMatching('ERROR_ILLEGAL_EMPTY_MATCHING'),
   nonExhaustiveMatchPatterns('ERROR_NONEXHAUSTIVE_MATCH_PATTERNS'),
   notAList('ERROR_NOT_A_LIST'),
