@@ -1032,7 +1032,7 @@ class StellaParser extends Parser {
         state = 357;
         errorHandler.sync(this);
         _la = tokenStream.LA(1)!;
-        if ((((_la) & ~0x3f) == 0 && ((1 << _la) & -6560200659402993624) != 0) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 13700865) != 0)) {
+        if ((((_la) & ~0x3f) == 0 && (BigInt.from(1 << _la) & BigInt.parse('-6560200659402993624')) != BigInt.zero) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 13700865) != 0)) {
           state = 349;
           _localctx._expression = expression(0);
           _localctx.exprs.add(_localctx._expression);
@@ -1113,7 +1113,7 @@ class StellaParser extends Parser {
         state = 389;
         errorHandler.sync(this);
         _la = tokenStream.LA(1)!;
-        if ((((_la) & ~0x3f) == 0 && ((1 << _la) & 2595485433173397544) != 0) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 9437185) != 0)) {
+        if ((((_la) & ~0x3f) == 0 && (BigInt.from(1 << _la) & BigInt.parse('2595485433173397544')) != BigInt.zero) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 9437185) != 0)) {
           state = 381;
           _localctx._matchCase = matchCase();
           _localctx.cases.add(_localctx._matchCase);
@@ -1144,7 +1144,7 @@ class StellaParser extends Parser {
         state = 402;
         errorHandler.sync(this);
         _la = tokenStream.LA(1)!;
-        if ((((_la) & ~0x3f) == 0 && ((1 << _la) & -6560200659402993624) != 0) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 13700865) != 0)) {
+        if ((((_la) & ~0x3f) == 0 && (BigInt.from(1 << _la) & BigInt.parse('-6560200659402993624')) != BigInt.zero) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 13700865) != 0)) {
           state = 394;
           _localctx._expression = expression(0);
           _localctx.exprs.add(_localctx._expression);
@@ -1510,7 +1510,7 @@ class StellaParser extends Parser {
             state = 512;
             errorHandler.sync(this);
             _la = tokenStream.LA(1)!;
-            if ((((_la) & ~0x3f) == 0 && ((1 << _la) & -6560200659402993624) != 0) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 13700865) != 0)) {
+            if ((((_la) & ~0x3f) == 0 && (BigInt.from(1 << _la) & BigInt.parse('-6560200659402993624')) != BigInt.zero) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 13700865) != 0)) {
               state = 504;
               _localctx._expression = expression(0);
               _localctx.args.add(_localctx._expression);
@@ -1751,7 +1751,7 @@ class StellaParser extends Parser {
         state = 580;
         errorHandler.sync(this);
         _la = tokenStream.LA(1)!;
-        if ((((_la) & ~0x3f) == 0 && ((1 << _la) & 2595485433173397544) != 0) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 9437185) != 0)) {
+        if ((((_la) & ~0x3f) == 0 && (BigInt.from(1 << _la) & BigInt.parse('2595485433173397544')) != BigInt.zero) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 9437185) != 0)) {
           state = 572;
           _localctx._pattern = pattern(0);
           _localctx.pttrs.add(_localctx._pattern);
@@ -1813,7 +1813,7 @@ class StellaParser extends Parser {
         state = 604;
         errorHandler.sync(this);
         _la = tokenStream.LA(1)!;
-        if ((((_la) & ~0x3f) == 0 && ((1 << _la) & 2595485433173397544) != 0) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 9437185) != 0)) {
+        if ((((_la) & ~0x3f) == 0 && (BigInt.from(1 << _la) & BigInt.parse('2595485433173397544')) != BigInt.zero) || ((((_la - 64)) & ~0x3f) == 0 && ((1 << (_la - 64)) & 9437185) != 0)) {
           state = 596;
           _localctx._pattern = pattern(0);
           _localctx.pttrs.add(_localctx._pattern);
