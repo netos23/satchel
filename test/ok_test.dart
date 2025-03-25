@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import 'util.dart';
 
 void main() {
-  group('Ok tests', () {
+  group('Ok tests', tags: 'ok', () {
     final root = Directory.current.path;
     final basePath = '$root/test/stella-tests/ok';
     final dir = Directory(basePath);

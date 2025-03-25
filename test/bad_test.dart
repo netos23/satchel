@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import 'util.dart';
 
 void main() {
-  group('Bad tests', () {
+  group('Bad tests', tags: 'bad', () {
     final root = Directory.current.path;
     final basePath = '$root/test/stella-tests/bad';
     final dir = Directory(basePath);
@@ -27,7 +27,7 @@ void main() {
 
             switch (report) {
               case ErrorTypeReport(:final errorCode):
-                expect(errorCode.code,expectErrorCode);
+                expect(errorCode.code, expectErrorCode);
               default:
                 fail('Expect error report');
             }

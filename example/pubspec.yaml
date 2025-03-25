@@ -1,0 +1,25 @@
+name: example
+description: "Example of satchel usage "
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  antlr4: ^4.13.2
+  collection: ^1.19.0
+  flutter:
+    sdk: flutter
+
+  satchel:
+    path: ..
+  split_view: ^3.2.1
+  web: ^1.1.1
+
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

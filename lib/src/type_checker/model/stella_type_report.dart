@@ -118,7 +118,8 @@ enum StellaTypeError implements Exception {
   unexpectedVariantLabel('ERROR_UNEXPECTED_VARIANT_LABEL'),
   duplicateVariantTypeFields('ERROR_DUPLICATE_VARIANT_TYPE_FIELDS'),
   incorrectNumberOfArguments('ERROR_INCORRECT_NUMBER_OF_ARGUMENTS'),
-  unexpectedNonNullableVariantPattern('ERROR_UNEXPECTED_NON_NULLARY_VARIANT_PATTERN'),
+  unexpectedNonNullableVariantPattern(
+      'ERROR_UNEXPECTED_NON_NULLARY_VARIANT_PATTERN'),
   unexpectedNullableVariantPattern('ERROR_UNEXPECTED_NULLARY_VARIANT_PATTERN'),
   unexpectedNumberOfParametersInLambda(
     'ERROR_UNEXPECTED_NUMBER_OF_PARAMETERS_IN_LAMBDA',
@@ -208,7 +209,7 @@ enum StellaTypeError implements Exception {
       TypeSum() => ambiguousSumType,
       TypeVariant() => ambiguousVariantType,
       TypeList(:final type?) => StellaTypeError.ambiguousType(type),
-      TypeList(:final type) => ambiguousList,
+      TypeList() => ambiguousList,
       TypeRef(:final type) => StellaTypeError.ambiguousType(type),
       Func(:final args, :final returnType) => [...args, returnType]
           .firstWhere((t) => !t.isStrict)

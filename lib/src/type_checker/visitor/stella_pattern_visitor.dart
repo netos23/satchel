@@ -82,10 +82,9 @@ class StellaPatternVisitor extends StellaParserBaseVisitor<StellaPattern> {
     }
 
     final expected = patternForType;
-    if(expected != null && !type.hasType(expected)){
+    if (expected != null && !type.hasType(expected)) {
       throw ArgumentError('Wrong pattern for type');
     }
-
 
     return ctx.pattern_?.accept(StellaPatternVisitor(type.typeOrNull));
   }

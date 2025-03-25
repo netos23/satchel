@@ -173,7 +173,7 @@ class SuccNatStellaPattern implements NatEvalStellaPattern {
   @override
   int get depth {
     final pattern = next;
-    return 1 + ((pattern is NatEvalStellaPattern) ? pattern.depth! : 0);
+    return 1 + ((pattern is NatEvalStellaPattern) ? pattern.depth : 0);
   }
 
   @override
@@ -527,6 +527,7 @@ class _VariantStellaPatternChecker implements StellaPatternChecker {
   }
 }
 
+// ignore: unused_element
 class _TupleStellaPatternChecker implements StellaPatternChecker {
   final TypeTuple type;
 
@@ -577,6 +578,7 @@ class _TupleStellaPatternChecker implements StellaPatternChecker {
   }
 }
 
+// ignore: unused_element
 class _RecordStellaPatternChecker implements StellaPatternChecker {
   final TypeRecord type;
 
@@ -598,6 +600,7 @@ class _RecordStellaPatternChecker implements StellaPatternChecker {
       return true;
     }
 
+    // ignore: unused_element
     bool checkExhaustiveSubPatterns(
       Iterable<Map<String, StellaPattern>> tuples,
       Map<String, StellaType> types,
