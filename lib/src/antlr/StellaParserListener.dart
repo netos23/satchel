@@ -10,6 +10,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// Enter a parse tree produced by [StellaParser.start_Program].
   /// [ctx] the parse tree
   void enterStart_Program(Start_ProgramContext ctx);
+
   /// Exit a parse tree produced by [StellaParser.start_Program].
   /// [ctx] the parse tree
   void exitStart_Program(Start_ProgramContext ctx);
@@ -17,6 +18,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// Enter a parse tree produced by [StellaParser.start_Expr].
   /// [ctx] the parse tree
   void enterStart_Expr(Start_ExprContext ctx);
+
   /// Exit a parse tree produced by [StellaParser.start_Expr].
   /// [ctx] the parse tree
   void exitStart_Expr(Start_ExprContext ctx);
@@ -24,6 +26,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// Enter a parse tree produced by [StellaParser.start_Type].
   /// [ctx] the parse tree
   void enterStart_Type(Start_TypeContext ctx);
+
   /// Exit a parse tree produced by [StellaParser.start_Type].
   /// [ctx] the parse tree
   void exitStart_Type(Start_TypeContext ctx);
@@ -31,6 +34,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// Enter a parse tree produced by [StellaParser.program].
   /// [ctx] the parse tree
   void enterProgram(ProgramContext ctx);
+
   /// Exit a parse tree produced by [StellaParser.program].
   /// [ctx] the parse tree
   void exitProgram(ProgramContext ctx);
@@ -39,6 +43,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.languageDecl].
   /// [ctx] the parse tree
   void enterLanguageCore(LanguageCoreContext ctx);
+
   /// Exit a parse tree produced by the [LanguageCore]
   /// labeled alternative in [StellaParser.languageDecl].
   /// [ctx] the parse tree
@@ -48,6 +53,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.extension].
   /// [ctx] the parse tree
   void enterAnExtension(AnExtensionContext ctx);
+
   /// Exit a parse tree produced by the [AnExtension]
   /// labeled alternative in [StellaParser.extension].
   /// [ctx] the parse tree
@@ -57,6 +63,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.declaration].
   /// [ctx] the parse tree
   void enterDeclFun(DeclFunContext ctx);
+
   /// Exit a parse tree produced by the [DeclFun]
   /// labeled alternative in [StellaParser.declaration].
   /// [ctx] the parse tree
@@ -66,6 +73,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.declaration].
   /// [ctx] the parse tree
   void enterDeclFunGeneric(DeclFunGenericContext ctx);
+
   /// Exit a parse tree produced by the [DeclFunGeneric]
   /// labeled alternative in [StellaParser.declaration].
   /// [ctx] the parse tree
@@ -75,6 +83,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.declaration].
   /// [ctx] the parse tree
   void enterDeclTypeAlias(DeclTypeAliasContext ctx);
+
   /// Exit a parse tree produced by the [DeclTypeAlias]
   /// labeled alternative in [StellaParser.declaration].
   /// [ctx] the parse tree
@@ -84,6 +93,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.declaration].
   /// [ctx] the parse tree
   void enterDeclExceptionType(DeclExceptionTypeContext ctx);
+
   /// Exit a parse tree produced by the [DeclExceptionType]
   /// labeled alternative in [StellaParser.declaration].
   /// [ctx] the parse tree
@@ -93,6 +103,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.declaration].
   /// [ctx] the parse tree
   void enterDeclExceptionVariant(DeclExceptionVariantContext ctx);
+
   /// Exit a parse tree produced by the [DeclExceptionVariant]
   /// labeled alternative in [StellaParser.declaration].
   /// [ctx] the parse tree
@@ -102,6 +113,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.annotation].
   /// [ctx] the parse tree
   void enterInlineAnnotation(InlineAnnotationContext ctx);
+
   /// Exit a parse tree produced by the [InlineAnnotation]
   /// labeled alternative in [StellaParser.annotation].
   /// [ctx] the parse tree
@@ -110,6 +122,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// Enter a parse tree produced by [StellaParser.paramDeclaration].
   /// [ctx] the parse tree
   void enterParamDeclaration(ParamDeclarationContext ctx);
+
   /// Exit a parse tree produced by [StellaParser.paramDeclaration].
   /// [ctx] the parse tree
   void exitParamDeclaration(ParamDeclarationContext ctx);
@@ -118,6 +131,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterFold(FoldContext ctx);
+
   /// Exit a parse tree produced by the [Fold]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -127,6 +141,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterAdd(AddContext ctx);
+
   /// Exit a parse tree produced by the [Add]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -136,6 +151,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterIsZero(IsZeroContext ctx);
+
   /// Exit a parse tree produced by the [IsZero]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -145,6 +161,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterVar(VarContext ctx);
+
   /// Exit a parse tree produced by the [Var]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -154,6 +171,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterTypeAbstraction(TypeAbstractionContext ctx);
+
   /// Exit a parse tree produced by the [TypeAbstraction]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -163,6 +181,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterDivide(DivideContext ctx);
+
   /// Exit a parse tree produced by the [Divide]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -172,6 +191,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterLessThan(LessThanContext ctx);
+
   /// Exit a parse tree produced by the [LessThan]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -181,6 +201,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterDotRecord(DotRecordContext ctx);
+
   /// Exit a parse tree produced by the [DotRecord]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -190,6 +211,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterGreaterThan(GreaterThanContext ctx);
+
   /// Exit a parse tree produced by the [GreaterThan]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -199,6 +221,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterEqual(EqualContext ctx);
+
   /// Exit a parse tree produced by the [Equal]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -208,6 +231,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterThrow(ThrowContext ctx);
+
   /// Exit a parse tree produced by the [Throw]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -217,6 +241,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterMultiply(MultiplyContext ctx);
+
   /// Exit a parse tree produced by the [Multiply]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -226,6 +251,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterConstMemory(ConstMemoryContext ctx);
+
   /// Exit a parse tree produced by the [ConstMemory]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -235,6 +261,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterList(ListContext ctx);
+
   /// Exit a parse tree produced by the [List]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -244,6 +271,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterTryCatch(TryCatchContext ctx);
+
   /// Exit a parse tree produced by the [TryCatch]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -253,6 +281,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterTryCastAs(TryCastAsContext ctx);
+
   /// Exit a parse tree produced by the [TryCastAs]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -262,6 +291,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterHead(HeadContext ctx);
+
   /// Exit a parse tree produced by the [Head]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -271,6 +301,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterTerminatingSemicolon(TerminatingSemicolonContext ctx);
+
   /// Exit a parse tree produced by the [TerminatingSemicolon]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -280,6 +311,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterNotEqual(NotEqualContext ctx);
+
   /// Exit a parse tree produced by the [NotEqual]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -289,6 +321,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterConstUnit(ConstUnitContext ctx);
+
   /// Exit a parse tree produced by the [ConstUnit]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -298,6 +331,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterSequence(SequenceContext ctx);
+
   /// Exit a parse tree produced by the [Sequence]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -307,6 +341,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterConstFalse(ConstFalseContext ctx);
+
   /// Exit a parse tree produced by the [ConstFalse]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -316,6 +351,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterAbstraction(AbstractionContext ctx);
+
   /// Exit a parse tree produced by the [Abstraction]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -325,6 +361,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterConstInt(ConstIntContext ctx);
+
   /// Exit a parse tree produced by the [ConstInt]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -334,6 +371,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterVariant(VariantContext ctx);
+
   /// Exit a parse tree produced by the [Variant]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -343,6 +381,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterConstTrue(ConstTrueContext ctx);
+
   /// Exit a parse tree produced by the [ConstTrue]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -352,6 +391,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterSubtract(SubtractContext ctx);
+
   /// Exit a parse tree produced by the [Subtract]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -361,6 +401,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterTypeCast(TypeCastContext ctx);
+
   /// Exit a parse tree produced by the [TypeCast]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -370,6 +411,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterIf(IfContext ctx);
+
   /// Exit a parse tree produced by the [If]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -379,6 +421,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterApplication(ApplicationContext ctx);
+
   /// Exit a parse tree produced by the [Application]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -388,6 +431,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterDeref(DerefContext ctx);
+
   /// Exit a parse tree produced by the [Deref]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -397,6 +441,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterIsEmpty(IsEmptyContext ctx);
+
   /// Exit a parse tree produced by the [IsEmpty]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -406,6 +451,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterPanic(PanicContext ctx);
+
   /// Exit a parse tree produced by the [Panic]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -415,6 +461,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterLessThanOrEqual(LessThanOrEqualContext ctx);
+
   /// Exit a parse tree produced by the [LessThanOrEqual]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -424,6 +471,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterSucc(SuccContext ctx);
+
   /// Exit a parse tree produced by the [Succ]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -433,6 +481,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterInl(InlContext ctx);
+
   /// Exit a parse tree produced by the [Inl]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -442,6 +491,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterGreaterThanOrEqual(GreaterThanOrEqualContext ctx);
+
   /// Exit a parse tree produced by the [GreaterThanOrEqual]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -451,6 +501,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterInr(InrContext ctx);
+
   /// Exit a parse tree produced by the [Inr]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -460,6 +511,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterMatch(MatchContext ctx);
+
   /// Exit a parse tree produced by the [Match]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -469,6 +521,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterLogicNot(LogicNotContext ctx);
+
   /// Exit a parse tree produced by the [LogicNot]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -478,6 +531,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterParenthesisedExpr(ParenthesisedExprContext ctx);
+
   /// Exit a parse tree produced by the [ParenthesisedExpr]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -487,6 +541,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterTail(TailContext ctx);
+
   /// Exit a parse tree produced by the [Tail]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -496,6 +551,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterRecord(RecordContext ctx);
+
   /// Exit a parse tree produced by the [Record]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -505,6 +561,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterLogicAnd(LogicAndContext ctx);
+
   /// Exit a parse tree produced by the [LogicAnd]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -514,6 +571,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterTypeApplication(TypeApplicationContext ctx);
+
   /// Exit a parse tree produced by the [TypeApplication]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -523,6 +581,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterLetRec(LetRecContext ctx);
+
   /// Exit a parse tree produced by the [LetRec]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -532,6 +591,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterLogicOr(LogicOrContext ctx);
+
   /// Exit a parse tree produced by the [LogicOr]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -541,6 +601,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterTryWith(TryWithContext ctx);
+
   /// Exit a parse tree produced by the [TryWith]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -550,6 +611,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterPred(PredContext ctx);
+
   /// Exit a parse tree produced by the [Pred]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -559,6 +621,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterTypeAsc(TypeAscContext ctx);
+
   /// Exit a parse tree produced by the [TypeAsc]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -568,6 +631,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterNatRec(NatRecContext ctx);
+
   /// Exit a parse tree produced by the [NatRec]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -577,6 +641,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterUnfold(UnfoldContext ctx);
+
   /// Exit a parse tree produced by the [Unfold]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -586,6 +651,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterRef(RefContext ctx);
+
   /// Exit a parse tree produced by the [Ref]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -595,6 +661,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterDotTuple(DotTupleContext ctx);
+
   /// Exit a parse tree produced by the [DotTuple]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -604,6 +671,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterFix(FixContext ctx);
+
   /// Exit a parse tree produced by the [Fix]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -613,6 +681,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterLet(LetContext ctx);
+
   /// Exit a parse tree produced by the [Let]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -622,6 +691,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterAssign(AssignContext ctx);
+
   /// Exit a parse tree produced by the [Assign]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -631,6 +701,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterTuple(TupleContext ctx);
+
   /// Exit a parse tree produced by the [Tuple]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -640,6 +711,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.expression].
   /// [ctx] the parse tree
   void enterConsList(ConsListContext ctx);
+
   /// Exit a parse tree produced by the [ConsList]
   /// labeled alternative in [StellaParser.expression].
   /// [ctx] the parse tree
@@ -648,6 +720,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// Enter a parse tree produced by [StellaParser.patternBinding].
   /// [ctx] the parse tree
   void enterPatternBinding(PatternBindingContext ctx);
+
   /// Exit a parse tree produced by [StellaParser.patternBinding].
   /// [ctx] the parse tree
   void exitPatternBinding(PatternBindingContext ctx);
@@ -655,6 +728,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// Enter a parse tree produced by [StellaParser.binding].
   /// [ctx] the parse tree
   void enterBinding(BindingContext ctx);
+
   /// Exit a parse tree produced by [StellaParser.binding].
   /// [ctx] the parse tree
   void exitBinding(BindingContext ctx);
@@ -662,6 +736,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// Enter a parse tree produced by [StellaParser.matchCase].
   /// [ctx] the parse tree
   void enterMatchCase(MatchCaseContext ctx);
+
   /// Exit a parse tree produced by [StellaParser.matchCase].
   /// [ctx] the parse tree
   void exitMatchCase(MatchCaseContext ctx);
@@ -670,6 +745,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternCons(PatternConsContext ctx);
+
   /// Exit a parse tree produced by the [PatternCons]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -679,6 +755,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternTuple(PatternTupleContext ctx);
+
   /// Exit a parse tree produced by the [PatternTuple]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -688,6 +765,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternList(PatternListContext ctx);
+
   /// Exit a parse tree produced by the [PatternList]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -697,6 +775,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternRecord(PatternRecordContext ctx);
+
   /// Exit a parse tree produced by the [PatternRecord]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -706,6 +785,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternVariant(PatternVariantContext ctx);
+
   /// Exit a parse tree produced by the [PatternVariant]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -715,6 +795,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternAsc(PatternAscContext ctx);
+
   /// Exit a parse tree produced by the [PatternAsc]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -724,6 +805,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternInt(PatternIntContext ctx);
+
   /// Exit a parse tree produced by the [PatternInt]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -733,6 +815,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternInr(PatternInrContext ctx);
+
   /// Exit a parse tree produced by the [PatternInr]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -742,6 +825,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternTrue(PatternTrueContext ctx);
+
   /// Exit a parse tree produced by the [PatternTrue]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -751,6 +835,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternInl(PatternInlContext ctx);
+
   /// Exit a parse tree produced by the [PatternInl]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -760,6 +845,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternVar(PatternVarContext ctx);
+
   /// Exit a parse tree produced by the [PatternVar]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -769,6 +855,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterParenthesisedPattern(ParenthesisedPatternContext ctx);
+
   /// Exit a parse tree produced by the [ParenthesisedPattern]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -778,6 +865,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternSucc(PatternSuccContext ctx);
+
   /// Exit a parse tree produced by the [PatternSucc]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -787,6 +875,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternFalse(PatternFalseContext ctx);
+
   /// Exit a parse tree produced by the [PatternFalse]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -796,6 +885,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternUnit(PatternUnitContext ctx);
+
   /// Exit a parse tree produced by the [PatternUnit]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -805,6 +895,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.pattern].
   /// [ctx] the parse tree
   void enterPatternCastAs(PatternCastAsContext ctx);
+
   /// Exit a parse tree produced by the [PatternCastAs]
   /// labeled alternative in [StellaParser.pattern].
   /// [ctx] the parse tree
@@ -813,6 +904,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// Enter a parse tree produced by [StellaParser.labelledPattern].
   /// [ctx] the parse tree
   void enterLabelledPattern(LabelledPatternContext ctx);
+
   /// Exit a parse tree produced by [StellaParser.labelledPattern].
   /// [ctx] the parse tree
   void exitLabelledPattern(LabelledPatternContext ctx);
@@ -821,6 +913,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeTuple(TypeTupleContext ctx);
+
   /// Exit a parse tree produced by the [TypeTuple]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -830,6 +923,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeTop(TypeTopContext ctx);
+
   /// Exit a parse tree produced by the [TypeTop]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -839,6 +933,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeBool(TypeBoolContext ctx);
+
   /// Exit a parse tree produced by the [TypeBool]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -848,6 +943,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeRef(TypeRefContext ctx);
+
   /// Exit a parse tree produced by the [TypeRef]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -857,6 +953,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeRec(TypeRecContext ctx);
+
   /// Exit a parse tree produced by the [TypeRec]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -866,6 +963,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeAuto(TypeAutoContext ctx);
+
   /// Exit a parse tree produced by the [TypeAuto]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -875,6 +973,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeSum(TypeSumContext ctx);
+
   /// Exit a parse tree produced by the [TypeSum]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -884,6 +983,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeVar(TypeVarContext ctx);
+
   /// Exit a parse tree produced by the [TypeVar]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -893,6 +993,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeVariant(TypeVariantContext ctx);
+
   /// Exit a parse tree produced by the [TypeVariant]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -902,6 +1003,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeUnit(TypeUnitContext ctx);
+
   /// Exit a parse tree produced by the [TypeUnit]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -911,6 +1013,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeNat(TypeNatContext ctx);
+
   /// Exit a parse tree produced by the [TypeNat]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -920,6 +1023,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeBottom(TypeBottomContext ctx);
+
   /// Exit a parse tree produced by the [TypeBottom]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -929,6 +1033,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeParens(TypeParensContext ctx);
+
   /// Exit a parse tree produced by the [TypeParens]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -938,6 +1043,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeFun(TypeFunContext ctx);
+
   /// Exit a parse tree produced by the [TypeFun]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -947,6 +1053,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeForAll(TypeForAllContext ctx);
+
   /// Exit a parse tree produced by the [TypeForAll]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -956,6 +1063,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeRecord(TypeRecordContext ctx);
+
   /// Exit a parse tree produced by the [TypeRecord]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -965,6 +1073,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// labeled alternative in [file.parserName>.stellatype].
   /// [ctx] the parse tree
   void enterTypeList(TypeListContext ctx);
+
   /// Exit a parse tree produced by the [TypeList]
   /// labeled alternative in [StellaParser.stellatype].
   /// [ctx] the parse tree
@@ -973,6 +1082,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// Enter a parse tree produced by [StellaParser.recordFieldType].
   /// [ctx] the parse tree
   void enterRecordFieldType(RecordFieldTypeContext ctx);
+
   /// Exit a parse tree produced by [StellaParser.recordFieldType].
   /// [ctx] the parse tree
   void exitRecordFieldType(RecordFieldTypeContext ctx);
@@ -980,6 +1090,7 @@ abstract class StellaParserListener extends ParseTreeListener {
   /// Enter a parse tree produced by [StellaParser.variantFieldType].
   /// [ctx] the parse tree
   void enterVariantFieldType(VariantFieldTypeContext ctx);
+
   /// Exit a parse tree produced by [StellaParser.variantFieldType].
   /// [ctx] the parse tree
   void exitVariantFieldType(VariantFieldTypeContext ctx);

@@ -526,6 +526,7 @@ class _VariantStellaPatternChecker implements StellaPatternChecker {
         );
   }
 }
+
 // ignore: unused_element
 class _TupleStellaPatternChecker implements StellaPatternChecker {
   final TypeTuple type;

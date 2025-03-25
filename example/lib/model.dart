@@ -38,13 +38,11 @@ class ModelResultArtifact extends ResultArtifact {
   ModelResultArtifact(this.model);
 }
 
-
 final class ResultAppState extends AppState {
   final ResultArtifact model;
 
   ResultAppState(this.model, super.source, super.target);
 }
-
 
 class AppModel {
   final ValueNotifier<AppState> state = ValueNotifier(
@@ -59,7 +57,7 @@ class AppModel {
     final text = sourceCodeController.text;
     state.value = LoadingAppState(text, state.value.target);
     try {
-      final input =  InputStream.fromString(text);
+      final input = InputStream.fromString(text);
       final report = buildStellaTypeReport(input);
       final model = report.toString();
       await Future.delayed(const Duration(seconds: 1));
@@ -72,7 +70,6 @@ class AppModel {
       state.value = IdleAppState(text, state.value.target);
     }
   }
-
 
   void changeTarget(AppTarget? target) {
     state.value = IdleAppState(

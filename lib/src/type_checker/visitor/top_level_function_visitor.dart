@@ -1,5 +1,3 @@
-
-
 import '../../antlr/StellaParser.dart';
 import '../../antlr/StellaParserBaseVisitor.dart';
 import '../model/stella_type_report.dart';
@@ -9,7 +7,6 @@ import 'stella_type_visitor.dart';
 
 class TopLevelFunctionVisitor
     extends StellaParserBaseVisitor<StellaTypesContext> {
-
   TopLevelFunctionVisitor();
 
   @override
@@ -36,13 +33,11 @@ class TopLevelFunctionVisitor
       throw error;
     }
 
-
     final returnType = ctx.returnType!.accept(
       StellaTypeVisitor(),
     );
 
-
-    if(returnType is ErrorTypeReport){
+    if (returnType is ErrorTypeReport) {
       throw returnType;
     }
 

@@ -6,7 +6,6 @@ import 'package:example/widgets/theme_button.dart';
 import 'package:flutter/material.dart';
 import 'package:split_view/split_view.dart';
 
-
 class MainPage extends StatefulWidget {
   const MainPage({
     super.key,

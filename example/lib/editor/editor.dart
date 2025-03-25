@@ -153,7 +153,6 @@ class _EditorWidgetState extends State<EditorWidget> {
   //   focus();
   // }
 
-
   int get cursorOffset {
     final pos = codeMirror?.getCursor();
     if (pos == null) return 0;
