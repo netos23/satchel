@@ -124,14 +124,12 @@ class _EditorWidgetState extends State<EditorWidget> {
         );
   }
 
-  @override
   void showCompletions({required bool autoInvoked}) {
     completionType = autoInvoked ? CompletionType.auto : CompletionType.manual;
 
     // codeMirror?.execCommand('autocomplete');
   }
 
-  @override
   void showQuickFixes() {
     completionType = CompletionType.quickfix;
 
@@ -155,7 +153,7 @@ class _EditorWidgetState extends State<EditorWidget> {
   //   focus();
   // }
 
-  @override
+
   int get cursorOffset {
     final pos = codeMirror?.getCursor();
     if (pos == null) return 0;
@@ -163,7 +161,6 @@ class _EditorWidgetState extends State<EditorWidget> {
     return codeMirror?.getDoc().indexFromPos(pos) ?? 0;
   }
 
-  @override
   void focus() {
     _focusNode.requestFocus();
   }

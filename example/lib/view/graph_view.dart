@@ -1,7 +1,4 @@
-import 'dart:js_interop';
-
 import 'package:flutter/material.dart';
-import 'package:web/web.dart' as web;
 
 class ReportView extends StatefulWidget {
   const ReportView({
@@ -18,7 +15,6 @@ class ReportView extends StatefulWidget {
 class _ReportViewState extends State<ReportView> {
   @override
   Widget build(BuildContext context) {
-
     return InteractiveViewer(
       child: Text(widget.text),
     );

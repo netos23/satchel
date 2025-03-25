@@ -208,7 +208,7 @@ enum StellaTypeError implements Exception {
       TypeSum() => ambiguousSumType,
       TypeVariant() => ambiguousVariantType,
       TypeList(:final type?) => StellaTypeError.ambiguousType(type),
-      TypeList(:final type) => ambiguousList,
+      TypeList() => ambiguousList,
       TypeRef(:final type) => StellaTypeError.ambiguousType(type),
       Func(:final args, :final returnType) => [...args, returnType]
           .firstWhere((t) => !t.isStrict)

@@ -8,6 +8,7 @@ environment:
 
 dependencies:
   antlr4: ^4.13.2
+  collection: ^1.19.0
   flutter:
     sdk: flutter
 

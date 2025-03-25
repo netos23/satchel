@@ -59,7 +59,7 @@ class AppModel {
     final text = sourceCodeController.text;
     state.value = LoadingAppState(text, state.value.target);
     try {
-      final input = await InputStream.fromString(text);
+      final input =  InputStream.fromString(text);
       final report = buildStellaTypeReport(input);
       final model = report.toString();
       await Future.delayed(const Duration(seconds: 1));
