@@ -1,8 +1,12 @@
+[![Dart](https://github.com/netos23/satchel/actions/workflows/tests.yaml/badge.svg)](https://github.com/netos23/satchel/actions/workflows/tests.yaml)
+[![codecov](https://codecov.io/gh/netos23/satchel/graph/badge.svg?token=7QC5WK8O73)](https://codecov.io/gh/netos23/satchel)
+---
 # satchel
-
+## [Web demo](https://netos23.github.io/satchel/)
+![screenshots/web_demo.png](screenshots%2Fweb_demo.png)
 ## Описание проекта
 
-Добро пожаловать в проект на Dart! Этот проект разработан с использованием языка программирования Dart и предоставляет [краткое описание функциональности вашего проекта, например: "утилиту для обработки данных", "веб-приложение", "библиотеку для работы с API" и т.д.].  
+Satchel - современный и быстрый тайпчекр  для stella
 
 ## Установка
 

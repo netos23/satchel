@@ -30,27 +30,27 @@ class _MainPageState extends State<MainPage> {
       builder: (context, state, _) {
         return Scaffold(
           appBar: AppBar(
-            title: Text('Dart code flow'),
+            title: Text('Satchel type checker'),
             actions: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SizedBox(
-                  width: 150,
-                  child: DropdownButtonFormField(
-                    decoration: InputDecoration(border: OutlineInputBorder()),
-                    value: state.target,
-                    items: AppTarget.values
-                        .map(
-                          (t) => DropdownMenuItem(
-                            value: t,
-                            child: Text(t.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: model.changeTarget,
-                  ),
-                ),
-              ),
+              // Padding(
+              //   padding: const EdgeInsets.all(8.0),
+              //   child: SizedBox(
+              //     width: 150,
+              //     child: DropdownButtonFormField(
+              //       decoration: InputDecoration(border: OutlineInputBorder()),
+              //       value: state.target,
+              //       items: AppTarget.values
+              //           .map(
+              //             (t) => DropdownMenuItem(
+              //               value: t,
+              //               child: Text(t.name),
+              //             ),
+              //           )
+              //           .toList(),
+              //       onChanged: model.changeTarget,
+              //     ),
+              //   ),
+              // ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: FilledButton.icon(
