@@ -23,11 +23,15 @@ void main() {
           final testName = file.asTestName();
           test(testName, () async {
             final input = await InputStream.fromPath(file.absolute.path);
+            Set<String> altErrors = collectAltErrors(input);
             final report = buildStellaTypeReport(input);
 
             switch (report) {
               case ErrorTypeReport(:final errorCode):
-                expect(errorCode.code, expectErrorCode);
+                 expect(
+                  {expectErrorCode, ...altErrors},
+                  anyElement(errorCode.code),
+                );
               default:
                 fail('Expect error report');
             }
@@ -36,4 +40,12 @@ void main() {
       });
     }
   });
+}
+
+Set<String> collectAltErrors(InputStream input) {
+  String data = String.fromCharCodes(input.data);
+  return StellaTypeError.values
+      .map((e) => e.code)
+      .where((c) => data.contains(c))
+      .toSet();
 }

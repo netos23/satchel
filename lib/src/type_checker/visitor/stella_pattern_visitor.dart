@@ -121,6 +121,14 @@ class StellaPatternVisitor extends StellaParserBaseVisitor<StellaPattern> {
       throw ArgumentError('Wrong pattern for type');
     }
 
+    if (ctx.pttrs.length != tuple.types.length) {
+      throw ArgumentError(
+        'Unexpected Tuple length. \n'
+        'Expected: ${tuple.types.length}\n'
+        'Actual: ${ctx.pttrs.length}',
+      );
+    }
+
     final patterns = ctx.pttrs
         .mapIndexed((i, p) => p.accept(StellaPatternVisitor(tuple.types[i])))
         .whereType<StellaPattern>()
