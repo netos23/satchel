@@ -82,10 +82,9 @@ class StellaPatternVisitor extends StellaParserBaseVisitor<StellaPattern> {
     }
 
     final expected = patternForType;
-    if(expected != null && !type.hasType(expected)){
+    if (expected != null && !type.hasType(expected)) {
       throw ArgumentError('Wrong pattern for type');
     }
-
 
     return ctx.pattern_?.accept(StellaPatternVisitor(type.typeOrNull));
   }
@@ -120,6 +119,14 @@ class StellaPatternVisitor extends StellaParserBaseVisitor<StellaPattern> {
 
     if (tuple is! TypeTuple) {
       throw ArgumentError('Wrong pattern for type');
+    }
+
+    if (ctx.pttrs.length != tuple.types.length) {
+      throw ArgumentError(
+        'Unexpected Tuple length. \n'
+        'Expected: ${tuple.types.length}\n'
+        'Actual: ${ctx.pttrs.length}',
+      );
     }
 
     final patterns = ctx.pttrs
