@@ -28,7 +28,7 @@ void main() {
 
             switch (report) {
               case ErrorTypeReport(:final errorCode):
-                 expect(
+                expect(
                   {expectErrorCode, ...altErrors},
                   anyElement(errorCode.code),
                 );
