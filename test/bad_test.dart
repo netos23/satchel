@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import 'util.dart';
 
 void main() {
-  group('Bad tests', () {
+  group('Bad tests', tags: 'bad', () {
     final root = Directory.current.path;
     final basePath = '$root/test/stella-tests/bad';
     final dir = Directory(basePath);

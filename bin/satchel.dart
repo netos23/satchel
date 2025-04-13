@@ -3,8 +3,6 @@ import 'package:satchel/satchel.dart';
 import 'package:satchel/src/type_checker/type_checker.dart';
 
 Future<void> main(List<String> args) async {
-
-
   final input = await InputStream.fromPath(args[0]);
   final report = buildStellaTypeReport(input);
 
