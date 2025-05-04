@@ -5,7 +5,7 @@ import 'stella_types.dart';
 import 'stella_types_context.dart';
 
 sealed class StellaTypeReport {
-  final StellaTypesContext typesContext;
+  final IStellaTypesContext typesContext;
 
   const StellaTypeReport({
     required this.typesContext,
@@ -17,7 +17,7 @@ sealed class StellaTypeReport {
 
   StellaTypeReport inferTypeReport(
     StellaTypeReport typeReport,
-    StellaTypesContext ctx,
+    IStellaTypesContext ctx,
   );
 }
 
@@ -36,7 +36,7 @@ class GotTypeReport extends StellaTypeReport {
   @override
   StellaTypeReport inferTypeReport(
     StellaTypeReport typeReport,
-    StellaTypesContext ctx,
+    IStellaTypesContext ctx,
   ) {
     if (!typeReport.hasType(type)) {
       return ErrorTypeReport(
@@ -91,6 +91,7 @@ class GotTypeReport extends StellaTypeReport {
 }
 
 enum StellaTypeError implements Exception {
+  exceptionNotDeclared('ERROR_EXCEPTION_TYPE_NOT_DECLARED'),
   unexpectedTypeForParameter('ERROR_UNEXPECTED_TYPE_FOR_PARAMETER'),
   unexpectedTypeForExpression('ERROR_UNEXPECTED_TYPE_FOR_EXPRESSION'),
   unexpectedDataForNullableLabel('ERROR_UNEXPECTED_DATA_FOR_NULLARY_LABEL'),
@@ -271,7 +272,7 @@ class ErrorTypeReport extends StellaTypeReport {
   @override
   StellaTypeReport inferTypeReport(
     StellaTypeReport typeReport,
-    StellaTypesContext ctx,
+    IStellaTypesContext ctx,
   ) {
     return ErrorTypeReport(
       typesContext: ctx,
@@ -285,7 +286,7 @@ class ErrorTypeReport extends StellaTypeReport {
   StellaType? get typeOrNull => recoveryType;
 
   StellaTypeReport copyWith({
-    StellaTypesContext? typesContext,
+    IStellaTypesContext? typesContext,
     StellaTypeError? errorCode,
     String? message,
     @Deprecated('Use recovery type instead') StellaTypeReport? cause,

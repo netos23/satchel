@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'package:collection/collection.dart';
 import 'package:satchel/src/type_checker/model/stella_patterns.dart';
 import 'package:satchel/src/type_checker/visitor/stella_pattern_visitor.dart';
-import 'package:satchel/src/type_checker/visitor/top_level_function_visitor.dart';
+import 'package:satchel/src/type_checker/visitor/top_level_context_visitor.dart';
 import 'package:satchel/src/util/extensions.dart';
 import 'package:satchel/src/util/iterable.dart';
 
@@ -13,10 +13,10 @@ import '../model/stella_type_report.dart';
 import '../model/stella_types.dart';
 import '../model/stella_types_context.dart';
 
-typedef ContextBuilder = StellaTypeReport? Function(StellaTypesContext);
+typedef ContextBuilder = StellaTypeReport? Function(IStellaTypesContextBuilder);
 
 class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
-  StellaTypesContext context;
+  IStellaTypesContext context;
 
   StellaTypeVisitor([this.context = const StellaTypesContext()]);
 
@@ -556,7 +556,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       }
       try {
         ctx.localDecls
-            .map((decl) => decl.accept(TopLevelFunctionVisitor()))
+            .map((decl) => decl.accept(TopLevelContextVisitor()))
             .fold(
               StellaTypesContext.root(),
               (ctx1, ctx2) => ctx1.merge(ctx2),

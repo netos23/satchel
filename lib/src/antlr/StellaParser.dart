@@ -756,7 +756,7 @@ class StellaParser extends Parser {
           state = 183;
           match(TOKEN_Surrogate_id_SYMB_6);
           state = 184;
-          _localctx.exceptionType = stellatype(0);
+          _localctx.exceptionContext = stellatype(0);
           break;
         case 5:
           _localctx = DeclExceptionVariantContext(_localctx);
