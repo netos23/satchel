@@ -1658,4 +1658,13 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       type: const Unit(),
     );
   }
+
+
+  @override
+  StellaTypeReport? visitPanic(PanicContext ctx) {
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: const Panic(),
+    );
+  }
 }
