@@ -92,6 +92,7 @@ class GotTypeReport extends StellaTypeReport {
 
 enum StellaTypeError implements Exception {
   exceptionNotDeclared('ERROR_EXCEPTION_TYPE_NOT_DECLARED'),
+  ambiguousThrowType('ERROR_AMBIGUOUS_THROW_TYPE'),
   unexpectedTypeForParameter('ERROR_UNEXPECTED_TYPE_FOR_PARAMETER'),
   unexpectedTypeForExpression('ERROR_UNEXPECTED_TYPE_FOR_EXPRESSION'),
   unexpectedDataForNullableLabel('ERROR_UNEXPECTED_DATA_FOR_NULLARY_LABEL'),

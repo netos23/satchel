@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:satchel/src/type_checker/model/stella_patterns.dart';
@@ -1659,12 +1660,47 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     );
   }
 
-
   @override
   StellaTypeReport? visitPanic(PanicContext ctx) {
     return GotTypeReport(
       typesContext: context.clone(),
       type: const Panic(),
     );
+  }
+
+  @override
+  StellaTypeReport? visitThrow(ThrowContext ctx) {
+    final exprReport = ctx.expr_!.accept(this)!;
+
+    final exceptionType = context.exceptionContext.exceptionType;
+    if (exprReport is ErrorTypeReport) {
+      return exprReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: exprReport.typeOrNull ?? exceptionType,
+      );
+    }
+    final throwType = exprReport.typeOrNull;
+
+    if(throwType == null || !throwType.isStrict){
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.ambiguousThrowType,
+      );
+    }
+
+    if (!exprReport.hasType(exceptionType!)) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.unexpectedExpression(
+          expected: exceptionType,
+          actual: exprReport.typeOrNull,
+        ),
+        message: 'Expected type $exceptionType, but got ${exprReport.typeOrNull}',
+        cause: exprReport,
+        recoveryType: exceptionType,
+      );
+    }
+
+
   }
 }
