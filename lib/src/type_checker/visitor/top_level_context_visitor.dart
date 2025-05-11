@@ -65,7 +65,7 @@ class TopLevelContextVisitor
   StellaTypesContext? visitDeclExceptionVariant(
     DeclExceptionVariantContext ctx,
   ) {
-    final name = ctx.text;
+    final name = ctx.name!.text!;
     final type = ctx.variantType!.accept(StellaTypeVisitor())!;
 
     return StellaTypesContext.exception(

@@ -224,6 +224,7 @@ enum StellaTypeError implements Exception {
       ConstMemory(:final type?) => StellaTypeError.ambiguousType(type),
       ConstMemory() => ambiguousReferenceType,
       Panic() => ambiguousPanicType,
+      Throw() => ambiguousThrowType,
       TypeSum() => ambiguousSumType,
       TypeVariant() => ambiguousVariantType,
       TypeList(:final type?) => StellaTypeError.ambiguousType(type),

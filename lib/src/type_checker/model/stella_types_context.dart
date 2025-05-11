@@ -153,6 +153,8 @@ class StellaTypesContext
   StellaTypesContext clone() {
     return StellaTypesContext(
       Map.from(_types),
+      languageFeatures,
+      exceptionContext,
     );
   }
 

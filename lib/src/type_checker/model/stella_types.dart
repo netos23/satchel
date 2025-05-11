@@ -556,7 +556,6 @@ base class Wildcard extends StellaType {
 final class Panic extends Wildcard {
   const Panic();
 
-
   @override
   bool get isStrict => false;
 
@@ -571,6 +570,31 @@ final class Panic extends Wildcard {
   @override
   String toString() {
     return 'Panic{}';
+  }
+}
+
+final class Throw extends Wildcard {
+  final StellaType type;
+
+  const Throw(this.type);
+
+  @override
+  bool get isStrict => false;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other &&
+          other is Throw &&
+          runtimeType == other.runtimeType &&
+          type == other.type;
+
+  @override
+  int get hashCode => super.hashCode ^ type.hashCode;
+
+  @override
+  String toString() {
+    return 'Throw{type: $type}';
   }
 }
 
