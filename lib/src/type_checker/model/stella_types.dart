@@ -5,8 +5,6 @@ import 'package:satchel/src/util/equality.dart';
 
 interface class TypeMatcher {}
 
-class Wildcard implements TypeMatcher {}
-
 sealed class StellaType implements TypeMatcher {
   const StellaType();
 
@@ -463,14 +461,48 @@ class Unit extends StellaType {
 
 class Top extends StellaType {
   const Top();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is Top && runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => 4;
+
+  @override
+  String toString() {
+    return 'Top{}';
+  }
 }
 
 class Bottom extends StellaType {
   const Bottom();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is Bottom && runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => 5;
+
+  @override
+  String toString() {
+    return 'Bottom{}';
+  }
 }
 
 class Auto extends StellaType {
   const Auto();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is Auto && runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => 6;
 }
 
 class TypeVar extends StellaType {
@@ -517,7 +549,56 @@ class ConstMemory extends TypeReference {
   }
 }
 
-class RowMemory extends StellaType {
+base class Wildcard extends StellaType {
+  const Wildcard();
+}
+
+final class Panic extends Wildcard {
+  const Panic();
+
+  @override
+  bool get isStrict => false;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is Panic && runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => 7;
+
+  @override
+  String toString() {
+    return 'Panic{}';
+  }
+}
+
+final class Throw extends Wildcard {
+  final StellaType type;
+
+  const Throw(this.type);
+
+  @override
+  bool get isStrict => false;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other &&
+          other is Throw &&
+          runtimeType == other.runtimeType &&
+          type == other.type;
+
+  @override
+  int get hashCode => super.hashCode ^ type.hashCode;
+
+  @override
+  String toString() {
+    return 'Throw{type: $type}';
+  }
+}
+
+final class RowMemory extends Wildcard {
   const RowMemory();
 
   @override
@@ -526,7 +607,7 @@ class RowMemory extends StellaType {
       super == other && other is RowMemory && runtimeType == other.runtimeType;
 
   @override
-  int get hashCode => 4;
+  int get hashCode => 8;
 
   @override
   String toString() {

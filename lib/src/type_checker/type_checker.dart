@@ -4,8 +4,9 @@ import 'package:satchel/satchel.dart';
 import '../antlr/StellaLexer.dart';
 import '../antlr/StellaParser.dart';
 import 'model/stella_type_report.dart';
+import 'model/stella_types.dart';
 import 'visitor/stella_type_visitor.dart';
-import 'visitor/top_level_function_visitor.dart';
+import 'visitor/top_level_context_visitor.dart';
 
 void ensureInitialized() {
   StellaLexer.checkVersion();
@@ -20,7 +21,7 @@ StellaTypeReport? buildStellaTypeReport(InputStream input) {
 
   final root = parser.start_Program();
   try {
-    final context = root.accept(TopLevelFunctionVisitor())!;
+    final context = root.accept(TopLevelContextVisitor())!;
 
     final entryPoint = context['main'];
     if (entryPoint is! Func) {
@@ -39,6 +40,17 @@ StellaTypeReport? buildStellaTypeReport(InputStream input) {
       );
     }
 
+    final features = context.languageFeatures;
+    final exceptionContext = context.exceptionContext;
+    if ((features.contains(LanguageFeatures.exceptions) ||
+            features.contains(LanguageFeatures.variantExceptions)) &&
+        !exceptionContext.hasDeclaration) {
+      return ErrorTypeReport(
+        typesContext: context,
+        errorCode: StellaTypeError.exceptionNotDeclared,
+        message: 'Exception  must have one param',
+      );
+    }
     return root.accept(StellaTypeVisitor(context));
   } on ErrorTypeReport catch (error) {
     return error;

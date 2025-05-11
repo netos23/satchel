@@ -5,7 +5,7 @@ import 'stella_types.dart';
 import 'stella_types_context.dart';
 
 sealed class StellaTypeReport {
-  final StellaTypesContext typesContext;
+  final IStellaTypesContext typesContext;
 
   const StellaTypeReport({
     required this.typesContext,
@@ -17,7 +17,7 @@ sealed class StellaTypeReport {
 
   StellaTypeReport inferTypeReport(
     StellaTypeReport typeReport,
-    StellaTypesContext ctx,
+    IStellaTypesContext ctx,
   );
 }
 
@@ -31,12 +31,12 @@ class GotTypeReport extends StellaTypeReport {
 
   @override
   bool hasType(StellaType type) =>
-      type is RowMemory || this.type is RowMemory || type == this.type;
+      type is Wildcard || this.type is Wildcard || type == this.type;
 
   @override
   StellaTypeReport inferTypeReport(
     StellaTypeReport typeReport,
-    StellaTypesContext ctx,
+    IStellaTypesContext ctx,
   ) {
     if (!typeReport.hasType(type)) {
       return ErrorTypeReport(
@@ -63,6 +63,8 @@ class GotTypeReport extends StellaTypeReport {
           refs.$1,
           refs.$2,
         ),
+      final (Panic, StellaType) withPanic => withPanic.$2,
+      final (StellaType, Panic) panicWith => panicWith.$1,
       _ => type,
     };
 
@@ -89,6 +91,8 @@ class GotTypeReport extends StellaTypeReport {
 }
 
 enum StellaTypeError implements Exception {
+  exceptionNotDeclared('ERROR_EXCEPTION_TYPE_NOT_DECLARED'),
+  ambiguousThrowType('ERROR_AMBIGUOUS_THROW_TYPE'),
   unexpectedTypeForParameter('ERROR_UNEXPECTED_TYPE_FOR_PARAMETER'),
   unexpectedTypeForExpression('ERROR_UNEXPECTED_TYPE_FOR_EXPRESSION'),
   unexpectedDataForNullableLabel('ERROR_UNEXPECTED_DATA_FOR_NULLARY_LABEL'),
@@ -112,6 +116,7 @@ enum StellaTypeError implements Exception {
   notATuple('ERROR_NOT_A_TUPLE'),
   ambiguousSumType('ERROR_AMBIGUOUS_SUM_TYPE'),
   ambiguousPatternType('ERROR_AMBIGUOUS_PATTERN_TYPE'),
+  ambiguousPanicType('ERROR_AMBIGUOUS_PANIC_TYPE'),
   illegalEmptyMatching('ERROR_ILLEGAL_EMPTY_MATCHING'),
   nonExhaustiveMatchPatterns('ERROR_NONEXHAUSTIVE_MATCH_PATTERNS'),
   notAReference('ERROR_NOT_A_REFERENCE'),
@@ -218,6 +223,8 @@ enum StellaTypeError implements Exception {
     return switch (type) {
       ConstMemory(:final type?) => StellaTypeError.ambiguousType(type),
       ConstMemory() => ambiguousReferenceType,
+      Panic() => ambiguousPanicType,
+      Throw() => ambiguousThrowType,
       TypeSum() => ambiguousSumType,
       TypeVariant() => ambiguousVariantType,
       TypeList(:final type?) => StellaTypeError.ambiguousType(type),
@@ -267,7 +274,7 @@ class ErrorTypeReport extends StellaTypeReport {
   @override
   StellaTypeReport inferTypeReport(
     StellaTypeReport typeReport,
-    StellaTypesContext ctx,
+    IStellaTypesContext ctx,
   ) {
     return ErrorTypeReport(
       typesContext: ctx,
@@ -281,7 +288,7 @@ class ErrorTypeReport extends StellaTypeReport {
   StellaType? get typeOrNull => recoveryType;
 
   StellaTypeReport copyWith({
-    StellaTypesContext? typesContext,
+    IStellaTypesContext? typesContext,
     StellaTypeError? errorCode,
     String? message,
     @Deprecated('Use recovery type instead') StellaTypeReport? cause,
