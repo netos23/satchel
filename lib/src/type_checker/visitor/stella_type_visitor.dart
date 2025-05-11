@@ -1537,4 +1537,125 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   StellaTypeReport? visitParenthesisedExpr(ParenthesisedExprContext ctx) {
     return ctx.expr_?.accept(this);
   }
+
+  @override
+  StellaTypeReport? visitConstMemory(ConstMemoryContext ctx) {
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: const ConstMemory(),
+    );
+  }
+
+  @override
+  StellaTypeReport? visitRef(RefContext ctx) {
+    final typeReport = ctx.expr_!.accept(this)!;
+
+    if (typeReport is ErrorTypeReport) {
+      return typeReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: typeReport.typeOrNull?.let(
+          (type) => TypeRef(
+            type: type,
+          ),
+        ),
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: TypeRef(
+        type: typeReport.typeOrNull!,
+      ),
+    );
+  }
+
+  @override
+  StellaTypeReport? visitDeref(DerefContext ctx) {
+    final refReport = ctx.expr_!.accept(this)!;
+    final addressType = refReport.typeOrNull;
+
+    if (refReport is ErrorTypeReport) {
+      return refReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: addressType?.tryAs<TypeRef>()?.let(
+              (ref) => ref.type,
+            ),
+      );
+    }
+
+    if (addressType is! TypeReference) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.notAReference,
+        message: 'Expected reference, but got: $addressType',
+      );
+    }
+
+    final refType = addressType.type;
+
+    if (refType != null && !refType.isStrict) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.ambiguousType(
+          addressType,
+        ),
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: refType ?? RowMemory(),
+    );
+  }
+
+  @override
+  StellaTypeReport? visitAssign(AssignContext ctx) {
+    final refReport = ctx.lhs!.accept(this)!;
+    final addressType = refReport.typeOrNull;
+
+    if (refReport is ErrorTypeReport) {
+      return refReport.copyWith(
+        typesContext: context.clone(),
+        recoveryType: const Unit(),
+      );
+    }
+
+    if (addressType is! TypeReference) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.notAReference,
+        message: 'Expected reference, but got: $addressType',
+      );
+    }
+    final refType = addressType.type;
+
+    if (refType == null || !addressType.isStrict) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.ambiguousType(
+          addressType,
+        ),
+      );
+    }
+
+    final exprReport = ctx.rhs!.accept(this)!;
+
+    if (!exprReport.hasType(refType)) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.unexpectedExpression(
+          expected: refType,
+          actual: exprReport.typeOrNull,
+        ),
+        message: 'Expected type $addressType, but got ${exprReport.typeOrNull}',
+        cause: exprReport,
+        recoveryType: const Unit(),
+      );
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: const Unit(),
+    );
+  }
 }

@@ -59,11 +59,44 @@ class Nat extends StellaType {
   }
 }
 
-class TypeRef extends StellaType {
-  final StellaType type;
+sealed class TypeReference extends StellaType {
+  final StellaType? type;
+
+  const TypeReference({this.type});
+
+  static compareReferences(
+    TypeReference lhs,
+    TypeReference rhs,
+  ) {
+    return switch ((lhs, rhs)) {
+      (TypeRef(), TypeRef()) => lhs.type == rhs.type,
+      (TypeRef(), ConstMemory(:final type?)) => lhs.type == type,
+      (ConstMemory(:final type?), TypeRef()) => rhs.type == type,
+      (ConstMemory(), ConstMemory()) =>
+        lhs.type == null || rhs.type == null || rhs.type == rhs.type,
+      (_, _) => true,
+    };
+  }
+
+  static TypeReference merge(TypeReference lhs, TypeReference rhs) {
+    final type = lhs.type ?? rhs.type;
+
+    if (type != null) {
+      return TypeRef(
+        type: type,
+      );
+    }
+
+    return lhs;
+  }
+}
+
+class TypeRef extends TypeReference {
+  @override
+  StellaType get type => super.type!;
 
   const TypeRef({
-    required this.type,
+    required StellaType super.type,
   });
 
   @override
@@ -72,10 +105,7 @@ class TypeRef extends StellaType {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      super == other &&
-          other is TypeRef &&
-          runtimeType == other.runtimeType &&
-          type == other.type;
+      other is TypeReference && TypeReference.compareReferences(this, other);
 
   @override
   int get hashCode => super.hashCode ^ type.hashCode;
@@ -462,5 +492,44 @@ class TypeVar extends StellaType {
   @override
   String toString() {
     return 'TypeVar{name: $name}';
+  }
+}
+
+class ConstMemory extends TypeReference {
+  final StellaType? type;
+
+  const ConstMemory([this.type]);
+
+  @override
+  bool get isStrict => type?.isStrict ?? false;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TypeReference && TypeReference.compareReferences(this, other);
+
+  @override
+  int get hashCode => super.hashCode ^ type.hashCode;
+
+  @override
+  String toString() {
+    return 'ConstMemory{type: $type}';
+  }
+}
+
+class RowMemory extends StellaType {
+  const RowMemory();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is RowMemory && runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => 4;
+
+  @override
+  String toString() {
+    return 'RowMemory{}';
   }
 }

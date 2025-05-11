@@ -30,7 +30,8 @@ class GotTypeReport extends StellaTypeReport {
   });
 
   @override
-  bool hasType(StellaType type) => type == this.type;
+  bool hasType(StellaType type) =>
+      type is RowMemory || this.type is RowMemory || type == this.type;
 
   @override
   StellaTypeReport inferTypeReport(
@@ -57,6 +58,10 @@ class GotTypeReport extends StellaTypeReport {
         ),
       final (TypeVariant, TypeVariant) sums => TypeVariant.merge(
           [sums.$1, sums.$2],
+        ),
+      final (TypeReference, TypeReference) refs => TypeReference.merge(
+          refs.$1,
+          refs.$2,
         ),
       _ => type,
     };
@@ -87,6 +92,7 @@ enum StellaTypeError implements Exception {
   unexpectedTypeForParameter('ERROR_UNEXPECTED_TYPE_FOR_PARAMETER'),
   unexpectedTypeForExpression('ERROR_UNEXPECTED_TYPE_FOR_EXPRESSION'),
   unexpectedDataForNullableLabel('ERROR_UNEXPECTED_DATA_FOR_NULLARY_LABEL'),
+  unexpectedMemoryAddress('ERROR_UNEXPECTED_MEMORY_ADDRESS'),
   unexpectedLambda('ERROR_UNEXPECTED_LAMBDA'),
   notAFunction('ERROR_NOT_A_FUNCTION'),
   undefinedVariable('ERROR_UNDEFINED_VARIABLE'),
@@ -108,10 +114,12 @@ enum StellaTypeError implements Exception {
   ambiguousPatternType('ERROR_AMBIGUOUS_PATTERN_TYPE'),
   illegalEmptyMatching('ERROR_ILLEGAL_EMPTY_MATCHING'),
   nonExhaustiveMatchPatterns('ERROR_NONEXHAUSTIVE_MATCH_PATTERNS'),
+  notAReference('ERROR_NOT_A_REFERENCE'),
   notAList('ERROR_NOT_A_LIST'),
   unexpectedList('ERROR_UNEXPECTED_LIST'),
   unexpectedInjection('ERROR_UNEXPECTED_INJECTION'),
   unexpectedPatternForType('ERROR_UNEXPECTED_PATTERN_FOR_TYPE'),
+  ambiguousReferenceType('ERROR_AMBIGUOUS_REFERENCE_TYPE'),
   ambiguousVariantType('ERROR_AMBIGUOUS_VARIANT_TYPE'),
   ambiguousList('ERROR_AMBIGUOUS_LIST_TYPE'),
   unexpectedVariant('ERROR_UNEXPECTED_VARIANT'),
@@ -164,6 +172,8 @@ enum StellaTypeError implements Exception {
           );
         }
       }
+    } else if ((expected, actual) case (_, ConstMemory())) {
+      return StellaTypeError.unexpectedMemoryAddress;
     } else if ((expected, actual) case (_, TypeRecord())) {
       return unexpectedRecord;
     } else if ((expected, actual) case final (TypeVariant, TypeVariant) pair) {
@@ -206,6 +216,8 @@ enum StellaTypeError implements Exception {
 
   factory StellaTypeError.ambiguousType(StellaType type) {
     return switch (type) {
+      ConstMemory(:final type?) => StellaTypeError.ambiguousType(type),
+      ConstMemory() => ambiguousReferenceType,
       TypeSum() => ambiguousSumType,
       TypeVariant() => ambiguousVariantType,
       TypeList(:final type?) => StellaTypeError.ambiguousType(type),
