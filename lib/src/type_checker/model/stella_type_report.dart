@@ -1,14 +1,17 @@
 import 'package:collection/collection.dart';
-import 'package:satchel/src/util/extensions.dart';
 
+import '../types/type_system.dart';
+import '../../util/extensions.dart';
 import 'stella_types.dart';
 import 'stella_types_context.dart';
 
 sealed class StellaTypeReport {
   final IStellaTypesContext typesContext;
+  final TypeSystem typeSystem;
 
   const StellaTypeReport({
     required this.typesContext,
+    required this.typeSystem,
   });
 
   bool hasType(StellaType type);
@@ -24,14 +27,25 @@ sealed class StellaTypeReport {
 class GotTypeReport extends StellaTypeReport {
   final StellaType type;
 
-  const GotTypeReport({
+  factory GotTypeReport({
+    required IStellaTypesContext typesContext,
+    required StellaType type,
+  }) {
+    return GotTypeReport._(
+      typesContext: typesContext,
+      typeSystem: TypeSystem.fromContext(typesContext),
+      type: type,
+    );
+  }
+
+  const GotTypeReport._({
     required super.typesContext,
+    required super.typeSystem,
     required this.type,
   });
 
   @override
-  bool hasType(StellaType type) =>
-      type is Wildcard || this.type is Wildcard || type == this.type;
+  bool hasType(StellaType type) => typeSystem.instanceOf(this.type, type);
 
   @override
   StellaTypeReport inferTypeReport(
@@ -260,8 +274,24 @@ class ErrorTypeReport extends StellaTypeReport {
   final StellaTypeReport? cause;
   final StellaType? recoveryType;
 
-  const ErrorTypeReport({
+  factory ErrorTypeReport({
+    required IStellaTypesContext typesContext,
+    StellaType? type,
+    required StellaTypeError errorCode,
+    String? message,
+    @Deprecated('Use recovery type instead') StellaTypeReport? cause,
+    StellaType? recoveryType,
+  }) {
+    return ErrorTypeReport._(
+      typesContext: typesContext,
+      typeSystem: TypeSystem.fromContext(typesContext),
+      errorCode: errorCode,
+    );
+  }
+
+  const ErrorTypeReport._({
     required super.typesContext,
+    required super.typeSystem,
     required this.errorCode,
     @Deprecated('Use recovery type instead') this.cause,
     this.recoveryType,
@@ -269,7 +299,10 @@ class ErrorTypeReport extends StellaTypeReport {
   });
 
   @override
-  bool hasType(StellaType type) => recoveryType == null || recoveryType == type;
+  bool hasType(StellaType type) {
+    final recoveryType = this.recoveryType;
+    return recoveryType == null || typeSystem.instanceOf(recoveryType, type);
+  }
 
   @override
   StellaTypeReport inferTypeReport(

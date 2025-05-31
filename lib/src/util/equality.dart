@@ -22,3 +22,22 @@ class NullableEquality<T> implements Equality<T?> {
   @override
   bool isValidKey(Object? o) => true;
 }
+
+typedef Equals<E> = bool Function(E lhs, E rhs);
+
+class DelegatingEquality<E> implements Equality<E> {
+  final Equals<E> equalsDelegate;
+
+  DelegatingEquality(this.equalsDelegate);
+
+  @override
+  bool equals(E e1, E e2) {
+    return equalsDelegate(e1, e2);
+  }
+
+  @override
+  int hash(E e) => e.hashCode;
+
+  @override
+  bool isValidKey(Object? o) => true;
+}
