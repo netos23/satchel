@@ -6,13 +6,17 @@ import 'stella_types.dart';
 
 enum LanguageFeatures {
   exceptions,
-  variantExceptions;
+  variantExceptions,
+  subtyping,
+  ambiguousTypeAsBottom;
 
   static LanguageFeatures? from(String name) {
     return switch (name) {
       '#exceptions' => exceptions,
       '#exception-type-declaration' => exceptions,
       '#open-variant-exceptions' => variantExceptions,
+      '#structural-subtyping' => subtyping,
+      '#ambiguous-type-as-bottom' => ambiguousTypeAsBottom,
       _ => null,
     };
   }

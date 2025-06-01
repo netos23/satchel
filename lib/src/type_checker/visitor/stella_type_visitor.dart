@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:satchel/src/type_checker/model/stella_patterns.dart';
+import 'package:satchel/src/type_checker/types/type_system.dart';
 import 'package:satchel/src/type_checker/visitor/stella_pattern_visitor.dart';
 import 'package:satchel/src/type_checker/visitor/top_level_context_visitor.dart';
 import 'package:satchel/src/util/extensions.dart';
@@ -318,6 +319,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: const Bool(),
           actual: conditionReport.tryAs<GotTypeReport>()?.type,
         ),
@@ -358,6 +360,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: const Nat(),
           actual: expReport.tryAs<GotTypeReport>()?.type,
         ),
@@ -391,6 +394,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: const Nat(),
           actual: expReport.tryAs<GotTypeReport>()?.type,
         ),
@@ -424,6 +428,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: const Nat(),
           actual: expReport.tryAs<GotTypeReport>()?.type,
         ),
@@ -461,6 +466,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: const Nat(),
           actual: counterReport.tryAs<GotTypeReport>()?.type,
         ),
@@ -487,6 +493,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
             : ErrorTypeReport(
                 typesContext: context.clone(),
                 errorCode: StellaTypeError.unexpectedExpression(
+                  context: context,
                   expected: Nat() >> (type >> type),
                   actual: stepReport.tryAs<GotTypeReport>()?.type,
                 ),
@@ -582,6 +589,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         return ErrorTypeReport(
           typesContext: context.clone(),
           errorCode: StellaTypeError.unexpectedExpression(
+            context: context,
             expected: type.returnType,
             actual: retExp.tryAs<GotTypeReport>()?.type,
           ),
@@ -638,42 +646,50 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
 
       final retExp = ctx.returnExpr!.accept(this)!;
 
-      return switch (retExp) {
-        GotTypeReport(:final type) => type.isStrict
-            ? GotTypeReport(
-                typesContext: context.clone(),
-                type: Func(
-                  args: argTypes
-                      .map((t) => t.typeOrNull)
-                      .whereType<StellaType>()
-                      .toList(),
-                  returnType: type,
-                  lambda: true,
+      switch (retExp) {
+        case GotTypeReport(:var type):
+          final ts = TypeSystem.of(context);
+          type = ts.resolveAmbiguousType(type)!;
+
+          final gotReport = type.isStrict
+              ? GotTypeReport(
+                  typesContext: context.clone(),
+                  type: Func(
+                    args: argTypes
+                        .map((t) => t.typeOrNull)
+                        .whereType<StellaType>()
+                        .toList(),
+                    returnType: type,
+                    lambda: true,
+                  ),
+                )
+              : ErrorTypeReport(
+                  typesContext: context.clone(),
+                  errorCode: StellaTypeError.ambiguousType(type),
+                  message: 'Ambiguous type',
+                  cause: retExp,
+                );
+
+          return gotReport;
+        case ErrorTypeReport(:final typeOrNull):
+          final errReport = typeOrNull?.let(
+                (it) => retExp.copyWith(
+                  typesContext: context.clone(),
+                  recoveryType: it.isStrict
+                      ? Func(
+                          args: argTypes
+                              .map((t) => t.typeOrNull)
+                              .whereType<StellaType>()
+                              .toList(),
+                          returnType: it,
+                          lambda: true,
+                        )
+                      : null,
                 ),
-              )
-            : ErrorTypeReport(
-                typesContext: context.clone(),
-                errorCode: StellaTypeError.ambiguousType(type),
-                message: 'Ambiguous type',
-                cause: retExp,
-              ),
-        ErrorTypeReport(:final typeOrNull) => typeOrNull?.let(
-              (it) => retExp.copyWith(
-                typesContext: context.clone(),
-                recoveryType: it.isStrict
-                    ? Func(
-                        args: argTypes
-                            .map((t) => t.typeOrNull)
-                            .whereType<StellaType>()
-                            .toList(),
-                        returnType: it,
-                        lambda: true,
-                      )
-                    : null,
-              ),
-            ) ??
-            retExp,
-      };
+              ) ??
+              retExp;
+          return errReport;
+      }
     });
   }
 
@@ -713,6 +729,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         return ErrorTypeReport(
           typesContext: context.clone(),
           errorCode: StellaTypeError.unexpectedExpression(
+            context: context,
             expected: expected,
             actual: actualTypeReport.typeOrNull,
           ),
@@ -749,6 +766,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: const Unit(),
           actual: exprReport1.typeOrNull,
         ),
@@ -799,7 +817,9 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     final tupleReport = ctx.expr_!.accept(this)!;
     final index = int.parse(ctx.index!.text!) - 1;
 
-    final tupleType = tupleReport.typeOrNull;
+    StellaType? tupleType = tupleReport.typeOrNull;
+    final ts = TypeSystem.of(context);
+    tupleType = ts.resolveAmbiguousType(tupleType);
 
     if (tupleType is! TypeTuple?) {
       return ErrorTypeReport(
@@ -1047,6 +1067,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: expectedType >> expectedType,
           actual: type,
         ),
@@ -1077,6 +1098,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: typeSet.first!,
           actual: typeSet.last,
         ),
@@ -1119,6 +1141,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: TypeList(type: headReport.typeOrNull),
           actual: tailReport.typeOrNull,
         ),
@@ -1138,7 +1161,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   StellaTypeReport? visitHead(HeadContext ctx) {
     final listReport = ctx.list!.accept(this)!;
 
-    final listType = listReport.typeOrNull;
+    StellaType? listType = listReport.typeOrNull;
+    final ts = TypeSystem.of(context);
+    listType = ts.resolveAmbiguousType(listType);
+
     if (listType is! TypeList?) {
       return ErrorTypeReport(
         typesContext: context.clone(),
@@ -1172,7 +1198,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   StellaTypeReport? visitTail(TailContext ctx) {
     final listReport = ctx.list!.accept(this)!;
 
-    final listType = listReport.typeOrNull;
+    StellaType? listType = listReport.typeOrNull;
+    final ts = TypeSystem.of(context);
+    listType = ts.resolveAmbiguousType(listType);
+
     if (listType is! TypeList?) {
       return ErrorTypeReport(
         typesContext: context.clone(),
@@ -1245,6 +1274,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: expression.typeOrNull!,
           actual: type.typeOrNull,
         ),
@@ -1262,7 +1292,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   StellaTypeReport? visitMatch(MatchContext ctx) {
     final expr = ctx.expr_!.accept(this)!;
 
-    final type = expr.typeOrNull;
+    StellaType? type = expr.typeOrNull;
+    final ts = TypeSystem.of(context);
+    type = ts.resolveAmbiguousType(type);
+
     if (type != null && !type.isStrict) {
       return ErrorTypeReport(
         typesContext: context.clone(),
@@ -1297,21 +1330,30 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         );
       }
 
-      final expr = ZipIterable(patterns, ctx.cases.map((c) => c.expr_))
-          .map((z) {
-            return withContext((context) {
-              context.add(z.$1.patternContext);
-              return z.$2!.accept(this)!;
-            });
-          })
-          .whereType<StellaTypeReport>()
-          .toList();
+      List<StellaTypeReport> expr =
+          ZipIterable(patterns, ctx.cases.map((c) => c.expr_))
+              .map((z) {
+                return withContext((context) {
+                  context.add(z.$1.patternContext);
+
+                  return z.$2!.accept(this)!;
+                });
+              })
+              .whereType<StellaTypeReport>()
+              .toList();
 
       if (expr.whereType<ErrorTypeReport>().firstOrNull case final error?) {
         return error;
       }
 
-      if (expr.where((e) => !(e.typeOrNull?.isStrict ?? true)).firstOrNull
+      expr = expr.whereType<GotTypeReport>().map((r) {
+        return GotTypeReport(
+          typesContext: r.typesContext,
+          type: ts.resolveAmbiguousType(r.type)!,
+        );
+      }).cast<StellaTypeReport>().toList();
+
+      if (expr.firstWhereOrNull((e) => !(e.typeOrNull?.isStrict ?? true))
           case final error?) {
         return ErrorTypeReport(
           typesContext: context.clone(),
@@ -1366,15 +1408,19 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
             throw expr;
           }
 
-          if (expr.typeOrNull?.isStrict case false) {
+          StellaType? type = expr.typeOrNull;
+          final ts = TypeSystem.of(context);
+          type = ts.resolveAmbiguousType(type);
+
+          if (type?.isStrict case false) {
             throw ErrorTypeReport(
               typesContext: context.clone(),
-              errorCode: StellaTypeError.ambiguousType(expr.typeOrNull!),
+              errorCode: StellaTypeError.ambiguousType(type!),
               message: 'Ambiguous type',
             );
           }
 
-          final pattern = c.pat!.accept(StellaPatternVisitor(expr.typeOrNull))!;
+          final pattern = c.pat!.accept(StellaPatternVisitor(type))!;
           return (expr, pattern);
         }).toList();
 
@@ -1592,7 +1638,9 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       );
     }
 
-    final refType = addressType.type;
+    StellaType? refType = addressType.type;
+    final ts = TypeSystem.of(context);
+    refType = ts.resolveAmbiguousType(refType);
 
     if (refType != null && !refType.isStrict) {
       return ErrorTypeReport(
@@ -1628,7 +1676,9 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         message: 'Expected reference, but got: $addressType',
       );
     }
-    final refType = addressType.type;
+    StellaType? refType = addressType.type;
+    final ts = TypeSystem.of(context);
+    refType = ts.resolveAmbiguousType(refType);
 
     if (refType == null || !addressType.isStrict) {
       return ErrorTypeReport(
@@ -1645,6 +1695,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: refType,
           actual: exprReport.typeOrNull,
         ),
@@ -1679,7 +1730,9 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         recoveryType: exprReport.typeOrNull ?? exceptionType,
       );
     }
-    final throwType = exprReport.typeOrNull;
+    StellaType? throwType = exprReport.typeOrNull;
+    final ts = TypeSystem.of(context);
+    throwType = ts.resolveAmbiguousType(throwType);
 
     if (throwType == null ||
         (throwType is! TypeVariant && !throwType.isStrict)) {
@@ -1693,6 +1746,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return ErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
+          context: context,
           expected: exceptionType,
           actual: exprReport.typeOrNull,
         ),
@@ -1768,5 +1822,94 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     final fallback = ctx.fallbackExpr!.accept(this)!;
 
     return expr.inferTypeReport(fallback, context.clone());
+  }
+
+
+  @override
+  StellaTypeReport? visitTypeCast(TypeCastContext ctx) {
+    final expression = ctx.expr_!.accept(this)!;
+    final type = ctx.type_!.accept(this)!;
+
+    if (expression is ErrorTypeReport) {
+      return expression.copyWith(
+          recoveryType: type.typeOrNull
+      );
+    }
+
+    if (type is ErrorTypeReport) {
+      return type;
+    }
+
+    return GotTypeReport(
+      typesContext: context.clone(),
+      type: type.typeOrNull!,
+    );
+  }
+
+
+  @override
+  StellaTypeReport? visitTryCastAs(TryCastAsContext ctx) {
+    final expression = ctx.tryExpr!.accept(this)!;
+    final type = ctx.type_!.accept(this)!;
+    final fallback = ctx.fallbackExpr!.accept(this)!;
+
+    if (expression is ErrorTypeReport) {
+      return expression;
+    }
+
+    if (type is ErrorTypeReport) {
+      return type;
+    }
+
+    if (type is ErrorTypeReport) {
+      return type;
+    }
+
+    try {
+      final patType = ctx.pattern_!.accept(
+        StellaPatternVisitor(
+          type.typeOrNull,
+        ),
+      )!;
+
+      return withContext((context) {
+        context.add(patType.patternContext);
+
+        final expr = ctx.expr_!.accept(this)!;
+
+        return expr.inferTypeReport(fallback, context.clone());
+      });
+    } on ErrorTypeReport catch (report) {
+      return report;
+    } on StateError catch (error) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.duplicateRecordPatternFields,
+        message: error.message,
+      );
+    } on UnsupportedError catch (error) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.unexpectedNonNullableVariantPattern,
+        message: error.message,
+      );
+    } on RangeError catch (error) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.unexpectedNullableVariantPattern,
+        message: error.message,
+      );
+    } on ArgumentError catch (error) {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.unexpectedPatternForType,
+        message: error.message,
+      );
+    } on Object {
+      return ErrorTypeReport(
+        typesContext: context.clone(),
+        errorCode: StellaTypeError.ambiguousPatternType,
+      );
+    }
   }
 }

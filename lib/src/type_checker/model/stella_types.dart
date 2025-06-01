@@ -1,7 +1,10 @@
 import 'dart:collection';
 
 import 'package:collection/collection.dart';
+import 'package:satchel/src/type_checker/types/simple_type_system.dart';
+import 'package:satchel/src/type_checker/types/type_system.dart';
 import 'package:satchel/src/util/equality.dart';
+import 'package:satchel/src/util/extensions.dart';
 
 interface class TypeMatcher {}
 
@@ -359,10 +362,23 @@ class TypeVariant extends StellaType {
     return equals(this, other) == TypeVariantEquality.equals;
   }
 
-  static TypeVariantEquality equals(TypeVariant lhs, TypeVariant rhs) {
+  static TypeVariantEquality equals(
+    TypeVariant lhs,
+    TypeVariant rhs, [
+    InheritanceSystem? typeSystem,
+  ]) {
+    IterableEquality<StellaType?> valueEquality = typeSystem?.let(
+          (ts) => IterableEquality(
+            DelegatingEquality(
+              ts.instanceOf,
+            ),
+          ),
+        ) ??
+        TypeVariant._valueEquality;
+
     if (lhs.strict && rhs.strict) {
       return _keyEquality.equals(lhs.types.keys, rhs.types.keys) &&
-              _valueEquality.equals(lhs.types.values, rhs.types.values)
+              valueEquality.equals(lhs.types.values, rhs.types.values)
           ? TypeVariantEquality.equals
           : TypeVariantEquality.notEqual;
     }
@@ -370,7 +386,8 @@ class TypeVariant extends StellaType {
     if (!lhs.strict && !rhs.strict) {
       return rhs.types.entries.every((e) {
         final type = lhs.types[e.key];
-        return type == null || type == e.value;
+        return type == null ||
+            (typeSystem?.instanceOf(type, e.value) ?? type == e.value);
       })
           ? TypeVariantEquality.equals
           : TypeVariantEquality.notEqual;
@@ -393,9 +410,20 @@ class TypeVariant extends StellaType {
         case (StellaType(), null):
           return TypeVariantEquality.missingDataForLabel;
         case final (StellaType, StellaType) types:
-          if (types.$1 != types.$2) {
-            return TypeVariantEquality.notEqual;
+          if (typeSystem != null) {
+            if (lhs.strict && !typeSystem.instanceOf(types.$1, types.$2)) {
+              return TypeVariantEquality.notEqual;
+            }
+
+            if (rhs.strict && !typeSystem.instanceOf(types.$2, types.$1)) {
+              return TypeVariantEquality.notEqual;
+            }
+          } else {
+            if (types.$1 != types.$2) {
+              return TypeVariantEquality.notEqual;
+            }
           }
+
         default:
       }
     }
