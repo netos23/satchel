@@ -1,7 +1,7 @@
 import '../model/stella_types.dart';
 import 'type_system.dart';
 
-final class SimpleTypeSystem implements TypeSystem {
+final class SimpleTypeSystem implements InheritanceSystem {
   const SimpleTypeSystem();
 
   @override

@@ -5,13 +5,14 @@ import '../../util/equality.dart';
 import '../model/stella_types.dart';
 import 'type_system.dart';
 
-final class SubtypeTypeSystem implements TypeSystem {
+final class SubtypeTypeSystem implements InheritanceSystem {
   const SubtypeTypeSystem();
 
   @override
   bool instanceOf(StellaType? clazz, StellaType? base) {
     return switch ((clazz, base)) {
       (_, Top()) => true,
+      (Bottom(), _) => true,
       final (TypeReference, TypeReference) refs => _inferReferences(refs),
       final (TypeSum, TypeSum) sums => _inferSums(sums),
       final (Func, Func) functions => _inferFunctions(functions),
@@ -44,14 +45,32 @@ final class SubtypeTypeSystem implements TypeSystem {
   bool _inferVariants((TypeVariant, TypeVariant) variants) {
     final (clazz, base) = variants;
 
+    if (clazz.isStrict && base.isStrict) {
+      for (final entry in clazz.types.entries) {
+        final basePart = base.types[entry.key];
+
+        if (basePart == null && entry.value != null) {
+          return false;
+        }
+
+        if (!instanceOf(entry.value, basePart)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
     return TypeVariant.equals(clazz, base, this) == TypeVariantEquality.equals;
   }
 
   bool _inferTuples((TypeTuple, TypeTuple) tuples) {
     final (clazz, base) = tuples;
 
-    return ZipIterable(clazz.types, base.types)
-        .every((tuple) => instanceOf(tuple.$1, tuple.$2));
+    return ListEquality(DelegatingEquality(instanceOf)).equals(
+      clazz.types,
+      base.types,
+    );
   }
 
   bool _inferReferences((TypeReference, TypeReference) ref) {
@@ -79,7 +98,7 @@ final class SubtypeTypeSystem implements TypeSystem {
     );
     final (clazz, base) = functions;
     return instanceOf(clazz.returnType, base.returnType) &&
-        equality.equals(clazz.args, base.args);
+        equality.equals(base.args, clazz.args);
   }
 
   bool _inferLists((TypeList, TypeList) lists) {
@@ -91,5 +110,11 @@ final class SubtypeTypeSystem implements TypeSystem {
     return UnorderedIterableEquality(
       DelegatingEquality(instanceOf),
     ).equals(lhs, rhs);
+  }
+
+  @override
+  StellaType? resolveAmbiguousType(StellaType? type) {
+    // TODO: implement ambiguousType
+    throw UnimplementedError();
   }
 }

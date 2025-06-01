@@ -365,7 +365,7 @@ class TypeVariant extends StellaType {
   static TypeVariantEquality equals(
     TypeVariant lhs,
     TypeVariant rhs, [
-    TypeSystem? typeSystem,
+    InheritanceSystem? typeSystem,
   ]) {
     IterableEquality<StellaType?> valueEquality = typeSystem?.let(
           (ts) => IterableEquality(
@@ -410,14 +410,20 @@ class TypeVariant extends StellaType {
         case (StellaType(), null):
           return TypeVariantEquality.missingDataForLabel;
         case final (StellaType, StellaType) types:
-          if (typeSystem != null &&
-              !typeSystem.instanceOf(types.$1, types.$2)) {
-            return TypeVariantEquality.notEqual;
+          if (typeSystem != null) {
+            if (lhs.strict && !typeSystem.instanceOf(types.$1, types.$2)) {
+              return TypeVariantEquality.notEqual;
+            }
+
+            if (rhs.strict && !typeSystem.instanceOf(types.$2, types.$1)) {
+              return TypeVariantEquality.notEqual;
+            }
+          } else {
+            if (types.$1 != types.$2) {
+              return TypeVariantEquality.notEqual;
+            }
           }
 
-          if (types.$1 != types.$2) {
-            return TypeVariantEquality.notEqual;
-          }
         default:
       }
     }

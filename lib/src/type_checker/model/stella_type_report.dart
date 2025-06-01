@@ -33,7 +33,7 @@ class GotTypeReport extends StellaTypeReport {
   }) {
     return GotTypeReport._(
       typesContext: typesContext,
-      typeSystem: TypeSystem.fromContext(typesContext),
+      typeSystem: TypeSystem.of(typesContext),
       type: type,
     );
   }
@@ -58,6 +58,7 @@ class GotTypeReport extends StellaTypeReport {
         cause: typeReport,
         message: 'Expect ${this.type}, but got $type.',
         errorCode: StellaTypeError.unexpectedExpression(
+          context: ctx,
           expected: type,
           actual: typeReport.typeOrNull,
         ),
@@ -79,6 +80,8 @@ class GotTypeReport extends StellaTypeReport {
         ),
       final (Panic, StellaType) withPanic => withPanic.$2,
       final (StellaType, Panic) panicWith => panicWith.$1,
+      final (Throw, StellaType) withThrow => withThrow.$2,
+      final (StellaType, Throw) throwWith => throwWith.$1,
       _ => type,
     };
 
@@ -108,6 +111,7 @@ enum StellaTypeError implements Exception {
   exceptionNotDeclared('ERROR_EXCEPTION_TYPE_NOT_DECLARED'),
   ambiguousThrowType('ERROR_AMBIGUOUS_THROW_TYPE'),
   unexpectedTypeForParameter('ERROR_UNEXPECTED_TYPE_FOR_PARAMETER'),
+  unexpectedSubType('ERROR_UNEXPECTED_SUBTYPE'),
   unexpectedTypeForExpression('ERROR_UNEXPECTED_TYPE_FOR_EXPRESSION'),
   unexpectedDataForNullableLabel('ERROR_UNEXPECTED_DATA_FOR_NULLARY_LABEL'),
   unexpectedMemoryAddress('ERROR_UNEXPECTED_MEMORY_ADDRESS'),
@@ -156,11 +160,19 @@ enum StellaTypeError implements Exception {
   final String code;
 
   factory StellaTypeError.unexpectedExpression({
+    required IStellaTypesContext context,
     required StellaType expected,
     required StellaType? actual,
   }) {
+    final hasSubtypes = context.languageFeatures.contains(
+      LanguageFeatures.subtyping,
+    );
+    final defaultError =
+        hasSubtypes ? unexpectedSubType : unexpectedTypeForExpression;
+    final ts = TypeSystem.of(context);
+
     if ((expected, actual) case (TypeList(), TypeList())) {
-      return unexpectedTypeForExpression;
+      return defaultError;
     } else if ((expected, actual) case (_, TypeList())) {
       return unexpectedList;
     } else if ((expected, actual) case final (TypeTuple, TypeTuple) pair) {
@@ -179,13 +191,14 @@ enum StellaTypeError implements Exception {
       }
 
       final unexpected = actualKeys.difference(expectedKeys);
-      if (unexpected.isNotEmpty) {
+      if (unexpected.isNotEmpty && !hasSubtypes) {
         return unexpectedRecordFields;
       }
 
       for (final key in expectedKeys) {
-        if (pair.$1.types[key] != pair.$2.types[key]) {
+        if (!ts.instanceOf(pair.$2.types[key], pair.$1.types[key])) {
           return StellaTypeError.unexpectedExpression(
+            context: context,
             expected: pair.$1.types[key]!,
             actual: pair.$2.types[key]!,
           );
@@ -196,17 +209,31 @@ enum StellaTypeError implements Exception {
     } else if ((expected, actual) case (_, TypeRecord())) {
       return unexpectedRecord;
     } else if ((expected, actual) case final (TypeVariant, TypeVariant) pair) {
+      if (hasSubtypes && pair.$1.isStrict && pair.$2.isStrict) {
+        for (final entry in pair.$2.types.entries) {
+          final basePart = pair.$1.types[entry.key];
+
+          if (basePart == null && entry.value != null) {
+            return unexpectedVariantLabel;
+          }
+
+          if (!ts.instanceOf(entry.value, basePart)) {
+            return defaultError;
+          }
+        }
+      }
+
       return switch (TypeVariant.equals(pair.$1, pair.$2)) {
         TypeVariantEquality.missingDataForLabel => missingDataForLabel,
         TypeVariantEquality.unexpectedDataForNullableLabel =>
           unexpectedDataForNullableLabel,
         TypeVariantEquality.unexpectedVariantLabel => unexpectedVariantLabel,
-        _ => unexpectedTypeForExpression,
+        _ => defaultError,
       };
     } else if ((expected, actual) case (_, TypeVariant())) {
       return unexpectedVariant;
     } else if ((expected, actual) case (TypeSum(), TypeSum())) {
-      return unexpectedTypeForExpression;
+      return defaultError;
     } else if ((expected, actual) case (_, TypeSum())) {
       return unexpectedInjection;
     } else if ((expected, actual) case final (Func, Func) pair) {
@@ -217,20 +244,21 @@ enum StellaTypeError implements Exception {
       }
 
       if (!pair.$1.args.equals(pair.$2.args)) {
-        return unexpectedTypeForParameter;
+        return hasSubtypes ? defaultError : unexpectedTypeForParameter;
       }
 
-      if (pair.$1.returnType != pair.$2.returnType) {
+      if (!ts.instanceOf(pair.$2.returnType, pair.$1.returnType)) {
         return StellaTypeError.unexpectedExpression(
+          context: context,
           expected: pair.$1.returnType,
           actual: pair.$2.returnType,
         );
       }
     } else if ((expected, actual) case (_, Func(:final lambda))) {
-      return lambda ? unexpectedLambda : unexpectedTypeForExpression;
+      return lambda ? unexpectedLambda : defaultError;
     }
 
-    return unexpectedTypeForExpression;
+    return defaultError;
   }
 
   factory StellaTypeError.ambiguousType(StellaType type) {
@@ -284,8 +312,10 @@ class ErrorTypeReport extends StellaTypeReport {
   }) {
     return ErrorTypeReport._(
       typesContext: typesContext,
-      typeSystem: TypeSystem.fromContext(typesContext),
+      typeSystem: TypeSystem.of(typesContext),
       errorCode: errorCode,
+      recoveryType: recoveryType,
+      message: message,
     );
   }
 
