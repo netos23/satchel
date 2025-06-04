@@ -12,6 +12,15 @@ class LanguageFeatureVisitor
   }
 
   @override
+  StellaTypesContext? aggregateResult(
+      StellaTypesContext? aggregate,
+      StellaTypesContext? nextResult,
+      ) {
+    return aggregate?.merge(nextResult) ?? nextResult;
+  }
+
+
+  @override
   StellaTypesContext? visitAnExtension(AnExtensionContext ctx) {
     return StellaTypesContext.extensions(
       ctx.extensionNames

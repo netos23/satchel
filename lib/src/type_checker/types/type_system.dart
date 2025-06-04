@@ -1,4 +1,5 @@
 import 'package:satchel/src/type_checker/types/bot_ambiguous_resolver.dart';
+import 'package:satchel/src/type_checker/types/reconstruct_type_system.dart';
 
 import '../model/stella_types.dart';
 import '../model/stella_types_context.dart';
@@ -18,10 +19,7 @@ class CompositeTypeSystem implements TypeSystem {
   final InheritanceSystem inheritanceSystem;
   final AmbiguousResolver ambiguousResolver;
 
-  CompositeTypeSystem(
-    this.inheritanceSystem,
-    this.ambiguousResolver,
-  );
+  CompositeTypeSystem(this.inheritanceSystem, this.ambiguousResolver);
 
   @override
   bool instanceOf(StellaType? clazz, StellaType? base) {
@@ -38,14 +36,20 @@ abstract interface class TypeSystem
     implements InheritanceSystem, AmbiguousResolver {
   factory TypeSystem.of(IStellaTypesContext context) {
     final features = context.languageFeatures;
-    final inheritanceSystem = features.contains(LanguageFeatures.subtyping)
-        ? const SubtypeTypeSystem()
-        : const SimpleTypeSystem();
+    InheritanceSystem inheritanceSystem;
+
+    if (features.contains(LanguageFeatures.subtyping)) {
+      inheritanceSystem = const SubtypeTypeSystem();
+    } else if (features.contains(LanguageFeatures.typeReconstruction)) {
+      inheritanceSystem = const ReconstructTypeSystem();
+    } else {
+      inheritanceSystem = const SimpleTypeSystem();
+    }
 
     final ambiguousResolver =
         features.contains(LanguageFeatures.ambiguousTypeAsBottom)
-            ? BotAmbiguousResolver()
-            : NoopAmbiguousResolver();
+        ? BotAmbiguousResolver()
+        : NoopAmbiguousResolver();
 
     return CompositeTypeSystem(inheritanceSystem, ambiguousResolver);
   }

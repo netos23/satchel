@@ -34,7 +34,11 @@ class StellaReconstructionTypeVisitor
       return nextResult;
     }
 
-    return aggregate?.copyWith(constrains: nextResult?.constrains) ??
+    return aggregate?.copyWith(
+          constrains: nextResult?.constrains.let(
+            (c) => aggregate.constrains.followedBy(c),
+          ),
+        ) ??
         nextResult;
   }
 
@@ -637,7 +641,11 @@ class StellaReconstructionTypeVisitor
       return ConstraintGotTypeReport(
         typesContext: context.clone(),
         type: Func(args: type.args, returnType: type.returnType),
-        constrains: retExp.constrains,
+        constrains: retExp.constrains.followedBy(
+          [
+            _makeConstraint(retExp.typeOrNull, type.returnType),
+          ].whereType<Constraints>(),
+        ),
       );
     });
   }
@@ -655,7 +663,7 @@ class StellaReconstructionTypeVisitor
       final argTypes = paramDecls.map((decl) => decl.paramType!.accept(this)!);
 
       final errorReport = argTypes
-          .whereType<ConstraintGotTypeReport>()
+          .whereType<ConstraintErrorTypeReport>()
           .firstOrNull;
 
       if (errorReport case final error?) {
@@ -759,7 +767,13 @@ class StellaReconstructionTypeVisitor
     if (type is Func) {
       for (final (expected, actual) in ZipIterable(type.args, ctx.args)) {
         final actualTypeReport = actual.accept(this)!;
-        constrains = constrains.followedBy(actualTypeReport.constrains);
+        constrains = constrains
+            .followedBy(actualTypeReport.constrains)
+            .followedBy(
+              [
+                _makeConstraint(actualTypeReport.typeOrNull, expected),
+              ].whereType<Constraints>(),
+            );
 
         if (!actualTypeReport.hasType(expected)) {
           return ConstraintErrorTypeReport(
@@ -1668,10 +1682,6 @@ class StellaReconstructionTypeVisitor
     }
 
     if (lhs == rhs) {
-      return null;
-    }
-
-    if (lhs is! TypeVar && rhs is! TypeVar) {
       return null;
     }
 

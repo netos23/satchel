@@ -27,6 +27,18 @@ class TopLevelContextVisitor
     return aggregate?.merge(nextResult) ?? nextResult;
   }
 
+
+  @override
+  StellaTypesContext? visitAnExtension(AnExtensionContext ctx) {
+    return StellaTypesContext.extensions(
+      ctx.extensionNames
+          .map((t)=> t.text!)
+          .map((ext) => LanguageFeatures.from(ext))
+          .whereType<LanguageFeatures>()
+          .toSet(),
+    );
+  }
+
   @override
   StellaTypesContext visitDeclFun(DeclFunContext ctx) {
     final args = ctx.paramDecls
@@ -100,6 +112,18 @@ class TopLevelReconstructContextVisitor
     StellaTypesContext? nextResult,
   ) {
     return aggregate?.merge(nextResult) ?? nextResult;
+  }
+
+
+  @override
+  StellaTypesContext? visitAnExtension(AnExtensionContext ctx) {
+    return StellaTypesContext.extensions(
+      ctx.extensionNames
+          .map((t)=> t.text!)
+          .map((ext) => LanguageFeatures.from(ext))
+          .whereType<LanguageFeatures>()
+          .toSet(),
+    );
   }
 
   @override

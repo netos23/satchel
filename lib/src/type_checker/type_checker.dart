@@ -1,5 +1,6 @@
 import 'package:antlr4/antlr4.dart';
 import 'package:satchel/satchel.dart';
+import 'package:satchel/src/type_checker/types/constrains_unifier.dart';
 import 'package:satchel/src/type_checker/visitor/language_feature_visitor.dart';
 
 import '../antlr/StellaLexer.dart';
@@ -48,8 +49,18 @@ final class ReconstructTypeChecker extends TypeChecker {
   ConstraintStellaTypeReport? typeCheck(Start_ProgramContext ctx) {
     final report = ctx.accept(StellaReconstructionTypeVisitor(context));
 
+    final constraints = report?.constrains.toSet() ?? {};
+    final unifier = ConstrainsUnifier();
+
     return switch (report) {
-      ConstraintGotTypeReport() => report,
+      ConstraintGotTypeReport() =>
+        unifier.unify(constraints)
+            ? report
+            : ConstraintErrorTypeReport(
+                typesContext: report.typesContext,
+                errorCode: StellaTypeError.errorOccursCheckInfiniteType,
+                constrains: [],
+              ),
       ConstraintErrorTypeReport() => report,
       _ => report,
     };
