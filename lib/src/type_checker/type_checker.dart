@@ -1,16 +1,59 @@
 import 'package:antlr4/antlr4.dart';
 import 'package:satchel/satchel.dart';
+import 'package:satchel/src/type_checker/visitor/language_feature_visitor.dart';
 
 import '../antlr/StellaLexer.dart';
 import '../antlr/StellaParser.dart';
 import 'model/stella_type_report.dart';
 import 'model/stella_types.dart';
+import 'visitor/stella_reconstruction_visitor.dart';
 import 'visitor/stella_type_visitor.dart';
 import 'visitor/top_level_context_visitor.dart';
 
 void ensureInitialized() {
   StellaLexer.checkVersion();
   StellaParser.checkVersion();
+}
+
+sealed class TypeChecker {
+  final StellaTypesContext context;
+
+  factory TypeChecker.of(StellaTypesContext context) {
+    final features = context.languageFeatures;
+    if (features.contains(LanguageFeatures.typeReconstruction)) {
+      return ReconstructTypeChecker(context);
+    }
+
+    return BaseTypeChecker(context);
+  }
+
+  TypeChecker(this.context);
+
+  StellaTypeReport? typeCheck(Start_ProgramContext ctx);
+}
+
+final class BaseTypeChecker extends TypeChecker {
+  BaseTypeChecker(super.context);
+
+  @override
+  StellaTypeReport? typeCheck(Start_ProgramContext ctx) {
+    return ctx.accept(StellaTypeVisitor(context));
+  }
+}
+
+final class ReconstructTypeChecker extends TypeChecker {
+  ReconstructTypeChecker(super.context);
+
+  @override
+  ConstraintStellaTypeReport? typeCheck(Start_ProgramContext ctx) {
+    final report = ctx.accept(StellaReconstructionTypeVisitor(context));
+
+    return switch (report) {
+      ConstraintGotTypeReport() => report,
+      ConstraintErrorTypeReport() => report,
+      _ => report,
+    };
+  }
 }
 
 StellaTypeReport? buildStellaTypeReport(InputStream input) {
@@ -21,7 +64,9 @@ StellaTypeReport? buildStellaTypeReport(InputStream input) {
 
   final root = parser.start_Program();
   try {
-    final context = root.accept(TopLevelContextVisitor())!;
+    StellaTypesContext context = root.accept(LanguageFeatureVisitor())!;
+
+    context = root.accept(TopLevelContextVisitor.fromContext(context))!;
 
     final entryPoint = context['main'];
     if (entryPoint is! Func) {
@@ -51,7 +96,7 @@ StellaTypeReport? buildStellaTypeReport(InputStream input) {
         message: 'Exception  must have one param',
       );
     }
-    return root.accept(StellaTypeVisitor(context));
+    return TypeChecker.of(context).typeCheck(root);
   } on ErrorTypeReport catch (error) {
     return error;
   }

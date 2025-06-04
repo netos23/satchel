@@ -20,7 +20,7 @@ jobs:
         uses: flutter-actions/setup-flutter@v4
         with:
           channel: stable
-          version: 3.27.1
+          version: 3.32.1
       - name: Install dependencies
         run: dart pub get
       - name: Verify formatting
@@ -50,7 +50,7 @@ jobs:
         uses: flutter-actions/setup-flutter@v4
         with:
           channel: stable
-          version: 3.27.1
+          version: 3.32.1
       - name: Build pages
         run: flutter build web --release --wasm --base-href=/satchel/
       - name: Deploy 🚀

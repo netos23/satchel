@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:satchel/src/type_checker/types/variable_generator.dart';
 import 'package:satchel/src/util/extensions.dart';
 
 import 'stella_types.dart';
@@ -8,7 +9,8 @@ enum LanguageFeatures {
   exceptions,
   variantExceptions,
   subtyping,
-  ambiguousTypeAsBottom;
+  ambiguousTypeAsBottom,
+  typeReconstruction;
 
   static LanguageFeatures? from(String name) {
     return switch (name) {
@@ -17,6 +19,7 @@ enum LanguageFeatures {
       '#open-variant-exceptions' => variantExceptions,
       '#structural-subtyping' => subtyping,
       '#ambiguous-type-as-bottom' => ambiguousTypeAsBottom,
+      '#type-reconstruction' => typeReconstruction,
       _ => null,
     };
   }
@@ -70,6 +73,8 @@ class VariantExceptionContext implements ExceptionContext {
 }
 
 abstract interface class IStellaTypesContext {
+  VariableGenerator get variableGenerator;
+
   Set<LanguageFeatures> get languageFeatures;
 
   ExceptionContext get exceptionContext;
@@ -185,4 +190,7 @@ class StellaTypesContext
   void add(StellaTypesContext localContext) {
     _types.addAll(localContext._types);
   }
+
+  @override
+  VariableGenerator get variableGenerator => VariableGenerator.instance;
 }
