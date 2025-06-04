@@ -1,11 +1,10 @@
 import 'dart:collection';
-import 'dart:math';
 
 import 'package:collection/collection.dart';
+import 'package:satchel/src/type_checker/model/constraints.dart';
 import 'package:satchel/src/type_checker/model/stella_patterns.dart';
 import 'package:satchel/src/type_checker/types/type_system.dart';
 import 'package:satchel/src/type_checker/visitor/stella_pattern_visitor.dart';
-import 'package:satchel/src/type_checker/visitor/top_level_context_visitor.dart';
 import 'package:satchel/src/util/extensions.dart';
 import 'package:satchel/src/util/iterable.dart';
 
@@ -14,27 +13,36 @@ import '../../antlr/StellaParserBaseVisitor.dart';
 import '../model/stella_type_report.dart';
 import '../model/stella_types.dart';
 import '../model/stella_types_context.dart';
+import '../types/variable_generator.dart';
 
-typedef ContextBuilder = StellaTypeReport? Function(IStellaTypesContextBuilder);
+typedef ContextConstraintBuilder =
+    ConstraintStellaTypeReport? Function(IStellaTypesContextBuilder);
 
-class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
+class StellaReconstructionTypeVisitor
+    extends StellaParserBaseVisitor<ConstraintStellaTypeReport> {
+  VariableGenerator get variableGenerator => context.variableGenerator;
   IStellaTypesContext context;
 
-  StellaTypeVisitor([this.context = const StellaTypesContext()]);
+  StellaReconstructionTypeVisitor([this.context = const StellaTypesContext()]);
 
   @override
-  StellaTypeReport? aggregateResult(
-    StellaTypeReport? aggregate,
-    StellaTypeReport? nextResult,
+  ConstraintStellaTypeReport? aggregateResult(
+    ConstraintStellaTypeReport? aggregate,
+    ConstraintStellaTypeReport? nextResult,
   ) {
     if (nextResult is ErrorTypeReport) {
       return nextResult;
     }
 
-    return aggregate ?? nextResult;
+    return aggregate?.copyWith(
+          constrains: nextResult?.constrains.let(
+            (c) => aggregate.constrains.followedBy(c),
+          ),
+        ) ??
+        nextResult;
   }
 
-  StellaTypeReport? withContext(ContextBuilder builder) {
+  ConstraintStellaTypeReport? withContext(ContextConstraintBuilder builder) {
     final originalContext = context;
 
     final copyContext = context = originalContext.clone();
@@ -45,31 +53,23 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   }
 
   @override
-  StellaTypeReport visitTypeBool(TypeBoolContext ctx) {
-    return GotTypeReport(typesContext: context.clone(), type: const Bool());
-  }
-
-  @override
-  StellaTypeReport visitTypeNat(TypeNatContext ctx) {
-    return GotTypeReport(typesContext: context.clone(), type: const Nat());
-  }
-
-  @override
-  StellaTypeReport visitTypeRef(TypeRefContext ctx) {
-    final typeReport = ctx.type_!.accept(this)!;
-
-    if (typeReport is ErrorTypeReport) {
-      return typeReport;
-    }
-
-    return GotTypeReport(
+  ConstraintStellaTypeReport visitTypeBool(TypeBoolContext ctx) {
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
-      type: TypeRef(type: typeReport.typeOrNull!),
+      type: const Bool(),
     );
   }
 
   @override
-  StellaTypeReport visitTypeSum(TypeSumContext ctx) {
+  ConstraintStellaTypeReport visitTypeNat(TypeNatContext ctx) {
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: const Nat(),
+    );
+  }
+
+  @override
+  ConstraintStellaTypeReport visitTypeSum(TypeSumContext ctx) {
     final left = ctx.left!.accept(this)!;
     final right = ctx.right!.accept(this)!;
 
@@ -81,20 +81,22 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return right;
     }
 
-    return GotTypeReport(
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
       type: TypeSum(left: left.typeOrNull!, right: right.typeOrNull!),
+      constrains: left.constrains.followedBy(right.constrains),
     );
   }
 
   @override
-  StellaTypeReport visitTypeFun(TypeFunContext ctx) {
+  ConstraintStellaTypeReport visitTypeFun(TypeFunContext ctx) {
     final args = ctx.paramTypes
         .map((ctx) => ctx.accept(this))
-        .whereType<StellaTypeReport>()
+        .whereType<ConstraintStellaTypeReport>()
         .toList();
 
-    if (args.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+    if (args.whereType<ConstraintErrorTypeReport>().firstOrNull
+        case final error?) {
       return error;
     }
 
@@ -104,82 +106,62 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       return returnType;
     }
 
-    return GotTypeReport(
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
       type: Func(
         args: args.map((e) => e.typeOrNull).whereType<StellaType>().toList(),
         returnType: returnType.typeOrNull!,
       ),
+      constrains: args
+          .expand((a) => a.constrains)
+          .followedBy(returnType.constrains),
     );
   }
 
   @override
-  StellaTypeReport visitTypeForAll(TypeForAllContext ctx) {
-    final typeReport = ctx.type_!.accept(this)!;
-
-    if (typeReport is ErrorTypeReport) {
-      return typeReport;
-    }
-
-    return GotTypeReport(
-      typesContext: context.clone(),
-      type: TypeForAll(
-        types: ctx.types.map((t) => t.text).whereType<String>().toList(),
-        type: typeReport.typeOrNull!,
-      ),
-    );
-  }
-
-  @override
-  StellaTypeReport visitTypeRec(TypeRecContext ctx) {
-    final typeReport = ctx.type_!.accept(this)!;
-
-    if (typeReport is ErrorTypeReport) {
-      return typeReport;
-    }
-
-    return GotTypeReport(
-      typesContext: context.clone(),
-      type: TypeRec(variable: ctx.var_!.text!, type: typeReport.typeOrNull!),
-    );
-  }
-
-  @override
-  StellaTypeReport visitTypeTuple(TypeTupleContext ctx) {
+  ConstraintStellaTypeReport visitTypeTuple(TypeTupleContext ctx) {
     final args = ctx.types
         .map((ctx) => ctx.accept(this))
-        .whereType<StellaTypeReport>()
+        .whereType<ConstraintStellaTypeReport>()
         .toList();
 
-    if (args.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+    var errorTypeReport = args
+        .whereType<ConstraintErrorTypeReport>()
+        .firstOrNull;
+    if (errorTypeReport case final error?) {
       return error;
     }
 
-    return GotTypeReport(
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
       type: TypeTuple(
         types: args.map((c) => c.typeOrNull).whereType<StellaType>().toList(),
       ),
+      constrains: args.expand((a) => a.constrains),
     );
   }
 
   @override
-  StellaTypeReport visitTypeRecord(TypeRecordContext ctx) {
+  ConstraintStellaTypeReport visitTypeRecord(TypeRecordContext ctx) {
     final labels = ctx.fieldTypes.map((f) => f.label!.text!).toList();
     final types = ctx.fieldTypes.map((f) => f.type_!.accept(this)!).toList();
 
     if (labels.toSet().length != labels.length) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.duplicateRecordTypeFields,
+        constrains: types.expand((a) => a.constrains),
       );
     }
 
-    if (types.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+    final errorTypeReport = types
+        .whereType<ConstraintErrorTypeReport>()
+        .firstOrNull;
+    if (errorTypeReport case final error?) {
       return error;
     }
 
-    return GotTypeReport(
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
       type: TypeRecord(
         types: LinkedHashMap.fromIterables(
@@ -187,26 +169,31 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           types.map((t) => t.typeOrNull).whereType<StellaType>().toList(),
         ),
       ),
+      constrains: types.expand((a) => a.constrains),
     );
   }
 
   @override
-  StellaTypeReport visitTypeVariant(TypeVariantContext ctx) {
+  ConstraintStellaTypeReport visitTypeVariant(TypeVariantContext ctx) {
     final labels = ctx.fieldTypes.map((f) => f.label!.text!).toList();
     final types = ctx.fieldTypes.map((f) => f.type_?.accept(this)).toList();
 
     if (labels.toSet().length != labels.length) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.duplicateVariantTypeFields,
+        constrains: types.whereType<ConstraintStellaTypeReport>().expand(
+          (a) => a.constrains,
+        ),
       );
     }
 
-    if (types.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+    final typeReport = types.whereType<ConstraintErrorTypeReport>().firstOrNull;
+    if (typeReport case final error?) {
       return error;
     }
 
-    return GotTypeReport(
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
       type: TypeVariant(
         types: LinkedHashMap.fromIterables(
@@ -214,75 +201,99 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           types.map((t) => t?.typeOrNull).toList(),
         ),
       ),
+      constrains: types.whereType<ConstraintStellaTypeReport>().expand(
+        (a) => a.constrains,
+      ),
     );
   }
 
   @override
-  StellaTypeReport visitTypeList(TypeListContext ctx) {
+  ConstraintStellaTypeReport visitTypeList(TypeListContext ctx) {
     final typeReport = ctx.type_!.accept(this)!;
 
     if (typeReport is ErrorTypeReport) {
       return typeReport;
     }
 
-    return GotTypeReport(
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
       type: TypeList(type: typeReport.typeOrNull!),
+      constrains: typeReport.constrains,
     );
   }
 
   @override
-  StellaTypeReport visitTypeUnit(TypeUnitContext ctx) {
-    return GotTypeReport(typesContext: context.clone(), type: const Unit());
-  }
-
-  @override
-  StellaTypeReport visitTypeTop(TypeTopContext ctx) {
-    return GotTypeReport(typesContext: context.clone(), type: const Top());
-  }
-
-  @override
-  StellaTypeReport visitTypeBottom(TypeBottomContext ctx) {
-    return GotTypeReport(typesContext: context.clone(), type: const Bottom());
-  }
-
-  @override
-  StellaTypeReport visitTypeAuto(TypeAutoContext ctx) {
-    return GotTypeReport(typesContext: context.clone(), type: const Auto());
-  }
-
-  @override
-  StellaTypeReport visitTypeVar(TypeVarContext ctx) {
-    return GotTypeReport(
+  ConstraintStellaTypeReport visitTypeUnit(TypeUnitContext ctx) {
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
-      type: TypeVar(ctx.name!.text!),
+      type: const Unit(),
+    );
+  }
+
+  @override
+  ConstraintStellaTypeReport visitTypeTop(TypeTopContext ctx) {
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: const Top(),
+    );
+  }
+
+  @override
+  ConstraintStellaTypeReport visitTypeBottom(TypeBottomContext ctx) {
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: const Bottom(),
+    );
+  }
+
+  @override
+  ConstraintStellaTypeReport visitTypeAuto(TypeAutoContext ctx) {
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: variableGenerator.nextVariable(),
     );
   }
 
   /// T-False rule
   /// Always return [Bool]
   @override
-  StellaTypeReport visitConstFalse(ConstFalseContext ctx) {
-    return GotTypeReport(typesContext: context.clone(), type: const Bool());
+  ConstraintStellaTypeReport visitConstFalse(ConstFalseContext ctx) {
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: const Bool(),
+    );
   }
 
   /// T-True rule
   /// Always return [Bool]
   @override
-  StellaTypeReport visitConstTrue(ConstTrueContext ctx) {
-    return GotTypeReport(typesContext: context.clone(), type: const Bool());
+  ConstraintStellaTypeReport visitConstTrue(ConstTrueContext ctx) {
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: const Bool(),
+    );
   }
 
-  /// T-If rule
+  /// CT-If rule
   @override
-  StellaTypeReport visitIf(IfContext ctx) {
+  ConstraintStellaTypeReport visitIf(IfContext ctx) {
     final conditionReport = ctx.condition!.accept(this)!;
 
     final thenReport = ctx.thenExpr!.accept(this)!;
     final elseReport = ctx.elseExpr!.accept(this)!;
 
+    final constrains = conditionReport.constrains
+        .followedBy(thenReport.constrains)
+        .followedBy(elseReport.constrains)
+        .followedBy(
+          [
+            _makeConstraint(conditionReport.typeOrNull, const Bool()),
+            _makeConstraint(thenReport.typeOrNull, elseReport.typeOrNull),
+          ].whereType<Constraints>(),
+        );
+
     if (!conditionReport.hasType(const Bool())) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
           context: context,
@@ -292,35 +303,48 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         message: 'Expected type Bool, but got ${conditionReport.typeOrNull}',
         cause: conditionReport,
         recoveryType: thenReport.typeOrNull ?? elseReport.typeOrNull,
+        constrains: constrains,
       );
     }
 
-    if (conditionReport is ErrorTypeReport) {
+    if (conditionReport is ConstraintErrorTypeReport) {
       return conditionReport.copyWith(
         typesContext: context.clone(),
         recoveryType: thenReport.typeOrNull ?? elseReport.typeOrNull,
+        constrains: constrains,
       );
     }
 
-    return thenReport.inferTypeReport(elseReport, context.clone());
+    return thenReport
+        .inferTypeReport(elseReport, context.clone())
+        .copyWith(constrains: constrains);
   }
 
   /// T-Nat rule
   /// Always return [Nat]
   @override
-  StellaTypeReport visitConstInt(ConstIntContext ctx) {
-    return GotTypeReport(typesContext: context.clone(), type: const Nat());
+  ConstraintStellaTypeReport visitConstInt(ConstIntContext ctx) {
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: const Nat(),
+    );
   }
 
   /// T-Succ rule
   /// Expect [Nat] at inner expression
   /// Return [Nat]
   @override
-  StellaTypeReport visitSucc(SuccContext ctx) {
+  ConstraintStellaTypeReport visitSucc(SuccContext ctx) {
     final expReport = ctx.n!.accept(this)!;
 
+    final constrains = expReport.constrains.followedBy(
+      [
+        _makeConstraint(expReport.typeOrNull, const Nat()),
+      ].whereType<Constraints>(),
+    );
+
     if (!expReport.hasType(const Nat())) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
           context: context,
@@ -330,28 +354,40 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         message: 'Expected type Nat, but got ${expReport.typeOrNull}',
         cause: expReport,
         recoveryType: const Nat(),
+        constrains: constrains,
       );
     }
 
-    if (expReport is ErrorTypeReport) {
+    if (expReport is ConstraintErrorTypeReport) {
       return expReport.copyWith(
         typesContext: context.clone(),
         recoveryType: const Nat(),
+        constrains: constrains,
       );
     }
 
-    return GotTypeReport(typesContext: context.clone(), type: const Nat());
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: const Nat(),
+      constrains: constrains,
+    );
   }
 
   /// T-Pred rule
   /// Expect [Nat] at inner expression
   /// Return [Nat]
   @override
-  StellaTypeReport visitPred(PredContext ctx) {
+  ConstraintStellaTypeReport visitPred(PredContext ctx) {
     final expReport = ctx.n!.accept(this)!;
 
+    final constrains = expReport.constrains.followedBy(
+      [
+        _makeConstraint(expReport.typeOrNull, const Nat()),
+      ].whereType<Constraints>(),
+    );
+
     if (!expReport.hasType(const Nat())) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
           context: context,
@@ -361,28 +397,40 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         message: 'Expected type Nat, but got ${expReport.typeOrNull}',
         cause: expReport,
         recoveryType: const Nat(),
+        constrains: constrains,
       );
     }
 
-    if (expReport is ErrorTypeReport) {
+    if (expReport is ConstraintErrorTypeReport) {
       return expReport.copyWith(
         typesContext: context.clone(),
         recoveryType: const Nat(),
+        constrains: constrains,
       );
     }
 
-    return GotTypeReport(typesContext: context.clone(), type: const Nat());
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: const Nat(),
+      constrains: constrains,
+    );
   }
 
   /// T-IsZero rule
   /// Expect [Nat] at inner expression
   /// Return [Bool]
   @override
-  StellaTypeReport visitIsZero(IsZeroContext ctx) {
+  ConstraintStellaTypeReport visitIsZero(IsZeroContext ctx) {
     final expReport = ctx.n!.accept(this)!;
 
+    final constrains = expReport.constrains.followedBy(
+      [
+        _makeConstraint(expReport.typeOrNull, const Nat()),
+      ].whereType<Constraints>(),
+    );
+
     if (!expReport.hasType(const Nat())) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
           context: context,
@@ -392,17 +440,23 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         message: 'Expected type Nat, but got ${expReport.typeOrNull}',
         cause: expReport,
         recoveryType: const Bool(),
+        constrains: constrains,
       );
     }
 
-    if (expReport is ErrorTypeReport) {
+    if (expReport is ConstraintErrorTypeReport) {
       return expReport.copyWith(
         typesContext: context.clone(),
         recoveryType: const Bool(),
+        constrains: constrains,
       );
     }
 
-    return GotTypeReport(typesContext: context.clone(), type: const Bool());
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: const Bool(),
+      constrains: constrains,
+    );
   }
 
   /// T-NatRec rule
@@ -411,13 +465,22 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   /// Expect [Func] of [Nat] -> ( [T] -> [T]) at counter expression
   /// Return [Bool]
   @override
-  StellaTypeReport? visitNatRec(NatRecContext ctx) {
+  ConstraintStellaTypeReport? visitNatRec(NatRecContext ctx) {
     final counterReport = ctx.n!.accept(this)!;
     final initReport = ctx.initial!.accept(this)!;
     final stepReport = ctx.step!.accept(this)!;
 
+    final constrains = counterReport.constrains
+        .followedBy(initReport.constrains)
+        .followedBy(stepReport.constrains)
+        .followedBy(
+          [
+            _makeConstraint(counterReport.typeOrNull, const Nat()),
+          ].whereType<Constraints>(),
+        );
+
     if (!counterReport.hasType(const Nat())) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
           context: context,
@@ -427,21 +490,34 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         message: 'Expected type Nat, but got ${counterReport.typeOrNull}',
         cause: counterReport,
         recoveryType: initReport.typeOrNull,
+        constrains: constrains,
       );
     }
 
-    if (counterReport is ErrorTypeReport) {
+    if (counterReport is ConstraintErrorTypeReport) {
       return counterReport.copyWith(
         typesContext: context.clone(),
         recoveryType: initReport.typeOrNull,
+        constrains: constrains,
       );
     }
 
     return switch ((initReport, stepReport)) {
-      (GotTypeReport(:final type), GotTypeReport()) =>
+      (ConstraintGotTypeReport(:final type), ConstraintGotTypeReport()) =>
         stepReport.hasType(Nat() >> (type >> type))
-            ? GotTypeReport(typesContext: context.clone(), type: type)
-            : ErrorTypeReport(
+            ? ConstraintGotTypeReport(
+                typesContext: context.clone(),
+                type: type,
+                constrains: constrains.followedBy(
+                  [
+                    _makeConstraint(
+                      stepReport.typeOrNull,
+                      Nat() >> (type >> type),
+                    ),
+                  ].whereType<Constraints>(),
+                ),
+              )
+            : ConstraintErrorTypeReport(
                 typesContext: context.clone(),
                 errorCode: StellaTypeError.unexpectedExpression(
                   context: context,
@@ -453,16 +529,18 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
                     'but got ${stepReport.typeOrNull}',
                 cause: initReport,
                 recoveryType: initReport.typeOrNull,
+                constrains: constrains,
               ),
-      (GotTypeReport(:final type), ErrorTypeReport()) =>
-        (stepReport as ErrorTypeReport).copyWith(
+      (ConstraintGotTypeReport(:final type), ConstraintErrorTypeReport()) =>
+        (stepReport as ConstraintErrorTypeReport).copyWith(
           typesContext: context.clone(),
           recoveryType: type,
         ),
-      (ErrorTypeReport(), _) => (initReport as ErrorTypeReport).copyWith(
-        typesContext: context.clone(),
-        recoveryType: initReport.typeOrNull,
-      ),
+      (ConstraintErrorTypeReport(), _) =>
+        (initReport as ConstraintErrorTypeReport).copyWith(
+          typesContext: context.clone(),
+          recoveryType: initReport.typeOrNull,
+        ),
       (_, _) => throw Error(),
     };
   }
@@ -470,27 +548,31 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   /// T-Unit rule
   /// Always return [Unit]
   @override
-  StellaTypeReport visitConstUnit(ConstUnitContext ctx) {
-    return GotTypeReport(typesContext: context.clone(), type: const Unit());
+  ConstraintStellaTypeReport visitConstUnit(ConstUnitContext ctx) {
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: const Unit(),
+    );
   }
 
   /// T-Var rule
   /// Return var type if var in context, error otherwise
   @override
-  StellaTypeReport visitVar(VarContext ctx) {
+  ConstraintStellaTypeReport visitVar(VarContext ctx) {
     final name = ctx.name!.text!;
 
     final type = context[name];
 
     if (type == null) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.undefinedVariable,
         message: 'Undefined variable $name',
+        constrains: [],
       );
     }
 
-    return GotTypeReport(typesContext: context.clone(), type: type);
+    return ConstraintGotTypeReport(typesContext: context.clone(), type: type);
   }
 
   /// T-Abs rule
@@ -498,7 +580,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   /// Checks return expression
   /// Return function
   @override
-  StellaTypeReport? visitDeclFun(DeclFunContext ctx) {
+  ConstraintStellaTypeReport? visitDeclFun(DeclFunContext ctx) {
     return withContext((context) {
       final name = ctx.name!.text!;
       final type = context[name] as Func;
@@ -509,7 +591,9 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       )) {
         context[name] = type;
       }
-      try {
+
+      // TODO: nested func
+      /* try {
         ctx.localDecls
             .map((decl) => decl.accept(TopLevelContextVisitor()))
             .fold(StellaTypesContext.root(), (ctx1, ctx2) => ctx1.merge(ctx2))
@@ -526,11 +610,12 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       if (innerErrorReport != null) {
         return innerErrorReport;
       }
+      */
 
       final retExp = ctx.returnExpr!.accept(this)!;
 
       if (!retExp.hasType(type.returnType)) {
-        return ErrorTypeReport(
+        return ConstraintErrorTypeReport(
           typesContext: context.clone(),
           errorCode: StellaTypeError.unexpectedExpression(
             context: context,
@@ -542,19 +627,25 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
               'but got ${retExp.typeOrNull}',
           cause: retExp,
           recoveryType: type,
+          constrains: retExp.constrains,
         );
       }
 
-      if (retExp is ErrorTypeReport) {
+      if (retExp is ConstraintErrorTypeReport) {
         return retExp.copyWith(
           typesContext: context.clone(),
           recoveryType: Func(args: type.args, returnType: type.returnType),
         );
       }
 
-      return GotTypeReport(
+      return ConstraintGotTypeReport(
         typesContext: context.clone(),
         type: Func(args: type.args, returnType: type.returnType),
+        constrains: retExp.constrains.followedBy(
+          [
+            _makeConstraint(retExp.typeOrNull, type.returnType),
+          ].whereType<Constraints>(),
+        ),
       );
     });
   }
@@ -564,14 +655,18 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   /// Checks return expression
   /// Return function
   @override
-  StellaTypeReport? visitAbstraction(AbstractionContext ctx) {
+  ConstraintStellaTypeReport? visitAbstraction(AbstractionContext ctx) {
     return withContext((context) {
       var paramDecls = ctx.paramDecls;
 
       final argNames = paramDecls.map((decl) => decl.name!.text!);
       final argTypes = paramDecls.map((decl) => decl.paramType!.accept(this)!);
 
-      if (argTypes.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+      final errorReport = argTypes
+          .whereType<ConstraintErrorTypeReport>()
+          .firstOrNull;
+
+      if (errorReport case final error?) {
         return error;
       }
 
@@ -581,13 +676,17 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
 
       final retExp = ctx.returnExpr!.accept(this)!;
 
+      final constraints = argTypes
+          .expand((a) => a.constrains)
+          .followedBy(retExp.constrains);
+
       switch (retExp) {
-        case GotTypeReport(:var type):
+        case ConstraintGotTypeReport(:var type):
           final ts = TypeSystem.of(context);
           type = ts.resolveAmbiguousType(type)!;
 
-          final gotReport = type.isStrict
-              ? GotTypeReport(
+          ConstraintStellaTypeReport gotReport = type.isStrict
+              ? ConstraintGotTypeReport(
                   typesContext: context.clone(),
                   type: Func(
                     args: argTypes
@@ -597,18 +696,19 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
                     returnType: type,
                     lambda: true,
                   ),
+                  constrains: constraints,
                 )
-              : ErrorTypeReport(
+              : ConstraintErrorTypeReport(
                   typesContext: context.clone(),
                   errorCode: StellaTypeError.ambiguousType(type),
                   message: 'Ambiguous type',
                   cause: retExp,
+                  constrains: constraints,
                 );
 
           return gotReport;
-        case ErrorTypeReport(:final typeOrNull):
-          final errReport =
-              typeOrNull?.let(
+        case ConstraintErrorTypeReport(:final typeOrNull):
+          return typeOrNull?.let(
                 (it) => retExp.copyWith(
                   typesContext: context.clone(),
                   recoveryType: it.isStrict
@@ -621,10 +721,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
                           lambda: true,
                         )
                       : null,
+                  constrains: constraints,
                 ),
               ) ??
               retExp;
-          return errReport;
         default:
           throw Error();
       }
@@ -635,101 +735,111 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
   /// Check type of function and args
   /// Return the function type
   @override
-  StellaTypeReport? visitApplication(ApplicationContext ctx) {
+  ConstraintStellaTypeReport? visitApplication(ApplicationContext ctx) {
     final funcReport = ctx.fun?.accept(this);
 
-    if (funcReport is! GotTypeReport) {
+    if (funcReport is! ConstraintGotTypeReport) {
       return funcReport;
     }
 
     final type = funcReport.type;
-    if (type is! Func) {
-      return ErrorTypeReport(
+    if (type is! Func && type is! TypeVar) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.notAFunction,
         message: 'Can`t apply arguments, to not a function type',
+        constrains: [],
       );
     }
 
-    if (type.args.length != ctx.args.length) {
-      return ErrorTypeReport(
+    if (type is Func && type.args.length != ctx.args.length) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.incorrectNumberOfArguments,
         message: 'Expect ${type.args.length} args, but got ${ctx.args.length}',
         recoveryType: type.returnType,
+        constrains: [],
       );
     }
 
-    for (final (expected, actual) in ZipIterable(type.args, ctx.args)) {
-      final actualTypeReport = actual.accept(this)!;
+    Iterable<Constraints> constrains = [];
+    List<StellaType> argTypes = [];
+    if (type is Func) {
+      for (final (expected, actual) in ZipIterable(type.args, ctx.args)) {
+        final actualTypeReport = actual.accept(this)!;
+        constrains = constrains
+            .followedBy(actualTypeReport.constrains)
+            .followedBy(
+              [
+                _makeConstraint(actualTypeReport.typeOrNull, expected),
+              ].whereType<Constraints>(),
+            );
 
-      if (!actualTypeReport.hasType(expected)) {
-        return ErrorTypeReport(
-          typesContext: context.clone(),
-          errorCode: StellaTypeError.unexpectedExpression(
-            context: context,
-            expected: expected,
-            actual: actualTypeReport.typeOrNull,
+        if (!actualTypeReport.hasType(expected)) {
+          return ConstraintErrorTypeReport(
+            typesContext: context.clone(),
+            errorCode: StellaTypeError.unexpectedExpression(
+              context: context,
+              expected: expected,
+              actual: actualTypeReport.typeOrNull,
+            ),
+            message:
+                'Expected type $expected, '
+                'but got ${actualTypeReport.typeOrNull}',
+            cause: actualTypeReport,
+            recoveryType: type.returnType,
+            constrains: [],
+          );
+        }
+
+        if (actualTypeReport is ConstraintErrorTypeReport) {
+          return actualTypeReport.copyWith(
+            typesContext: context.clone(),
+            recoveryType: type.returnType,
+          );
+        }
+
+        argTypes.add(actualTypeReport.typeOrNull!);
+      }
+    } else {
+      final reports = ctx.args.map((a) => a.accept(this)!).toList();
+
+      if (reports.whereType<ConstraintErrorTypeReport>().firstOrNull
+          case final error?) {
+        return error;
+      }
+
+      constrains = reports.expand((a) => a.constrains);
+      argTypes = reports.map((a) => a.typeOrNull!).toList();
+    }
+
+    final varRet = variableGenerator.nextVariable();
+
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: varRet,
+      constrains: constrains
+          .followedBy(funcReport.constrains)
+          .followedBy(
+            [
+              _makeConstraint(type, Func(args: argTypes, returnType: varRet)),
+            ].whereType<Constraints>(),
           ),
-          message:
-              'Expected type $expected, '
-              'but got ${actualTypeReport.typeOrNull}',
-          cause: actualTypeReport,
-          recoveryType: type.returnType,
-        );
-      }
-
-      if (actualTypeReport is ErrorTypeReport) {
-        return actualTypeReport.copyWith(
-          typesContext: context.clone(),
-          recoveryType: type.returnType,
-        );
-      }
-    }
-
-    return GotTypeReport(typesContext: context.clone(), type: type.returnType);
-  }
-
-  /// T-Unit rule
-  /// Check type of first and second expression
-  /// Return the type of second expr
-  @override
-  StellaTypeReport? visitSequence(SequenceContext ctx) {
-    final exprReport1 = ctx.expr1!.accept(this)!;
-    final exprReport2 = ctx.expr2!.accept(this)!;
-
-    if (!exprReport1.hasType(const Unit())) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedExpression(
-          context: context,
-          expected: const Unit(),
-          actual: exprReport1.typeOrNull,
-        ),
-        message: 'Expected type Unit, but got ${exprReport1.typeOrNull}',
-        cause: exprReport1,
-        recoveryType: exprReport2.typeOrNull,
-      );
-    }
-
-    if (exprReport1 is ErrorTypeReport) {
-      return exprReport1.copyWith(
-        typesContext: context.clone(),
-        recoveryType: exprReport2.typeOrNull,
-      );
-    }
-
-    return exprReport2;
+    );
   }
 
   /// T-Tuple rule
   /// return Tuple type
   @override
-  StellaTypeReport visitTuple(TupleContext ctx) {
+  ConstraintStellaTypeReport visitTuple(TupleContext ctx) {
     final components = ctx.exprs.map((c) => c.accept(this)!).toList();
     final type = components.map((component) => component.typeOrNull).toList();
 
-    final anyErrorReport = components.whereType<ErrorTypeReport>().firstOrNull;
+    final anyErrorReport = components
+        .whereType<ConstraintErrorTypeReport>()
+        .firstOrNull;
+
+    final constrains = components.expand((e) => e.constrains);
 
     if (anyErrorReport != null) {
       return anyErrorReport.copyWith(
@@ -738,16 +848,17 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       );
     }
 
-    return GotTypeReport(
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
       type: TypeTuple(types: type),
+      constrains: constrains,
     );
   }
 
   /// T-Proj rule
   /// return Type of proj
   @override
-  StellaTypeReport visitDotTuple(DotTupleContext ctx) {
+  ConstraintStellaTypeReport visitDotTuple(DotTupleContext ctx) {
     final tupleReport = ctx.expr_!.accept(this)!;
     final index = int.parse(ctx.index!.text!) - 1;
 
@@ -755,53 +866,79 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     final ts = TypeSystem.of(context);
     tupleType = ts.resolveAmbiguousType(tupleType);
 
-    if (tupleType is! TypeTuple?) {
-      return ErrorTypeReport(
+    if (tupleType is! TypeTuple? && tupleType is! TypeVar) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.notATuple,
         message: 'Expected type Tuple, but got $tupleType',
         cause: tupleReport,
+        constrains: [],
       );
     }
 
     if (tupleType != null && !tupleType.isStrict) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.ambiguousType(tupleType),
         message: 'Ambiguous type',
         cause: tupleReport,
+        constrains: [],
       );
     }
 
-    final tupleLen = tupleType?.types.length ?? 0;
-    if (tupleLen <= index || index < 0) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.tupleIndexOutOfBounds,
-        message:
-            'Index out of bounds. Expected 1 <= index <= ${tupleLen + 1},'
-            ' but got ${index + 1}',
-        cause: tupleReport,
-      );
+    // TODO: FREE VARS
+    if (tupleType is TypeTuple?) {
+      final tupleLen = tupleType?.types.length ?? 0;
+      final closed = tupleType?.closed ?? true;
+      if (!closed && (tupleLen <= index || index < 0)) {
+        return ConstraintErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.tupleIndexOutOfBounds,
+          message:
+              'Index out of bounds. Expected 1 <= index <= ${tupleLen + 1},'
+              ' but got ${index + 1}',
+          cause: tupleReport,
+          constrains: [],
+        );
+      }
     }
 
     if (tupleReport is ErrorTypeReport) {
-      return tupleReport.copyWith(
-        typesContext: context.clone(),
-        recoveryType: tupleType?.types[index],
-      );
+      return tupleReport;
     }
 
-    return GotTypeReport(
+    final typeVar = variableGenerator.nextVariable();
+
+    final type = tupleType.tryAs<TypeTuple>()?.types[index];
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
-      type: tupleType!.types[index]!,
+      type: type ?? typeVar,
+      constrains: tupleReport.constrains.followedBy(
+        [
+          if (type == null)
+            _makeConstraint(
+              tupleType,
+              TypeTuple(
+                types: [
+                  if (index > 0)
+                    ...Iterable.generate(
+                      index - 1,
+                      (_) => variableGenerator.nextVariable(),
+                    ),
+                  typeVar,
+                ],
+                closed: false,
+              ),
+            ),
+        ].whereType<Constraints>(),
+      ),
     );
   }
 
   /// T-Record rule
   /// return Record type
   @override
-  StellaTypeReport visitRecord(RecordContext ctx) {
+  ConstraintStellaTypeReport visitRecord(RecordContext ctx) {
     final names = ctx.binds.map((c) => c.name!.text!).toList();
     final types = ctx.binds.map((c) => c.rhs!.accept(this)!).toList();
     final recordTypes = ZipIterable(
@@ -811,7 +948,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
 
     final namesSet = names.toSet();
     if (namesSet.length != names.length) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.duplicateRecordFields,
         message: 'Duplicate record fields detected',
@@ -819,10 +956,13 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           types: LinkedHashMap.fromEntries(recordTypes),
           instance: true,
         ),
+        constrains: [],
       );
     }
 
-    final anyErrorReport = types.whereType<ErrorTypeReport>().firstOrNull;
+    final anyErrorReport = types
+        .whereType<ConstraintErrorTypeReport>()
+        .firstOrNull;
     if (anyErrorReport != null) {
       return anyErrorReport.copyWith(
         typesContext: context.clone(),
@@ -833,107 +973,133 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       );
     }
 
-    return GotTypeReport(
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
       type: TypeRecord(
         types: LinkedHashMap.fromEntries(recordTypes),
         instance: true,
       ),
+      constrains: types.expand((t) => t.constrains),
     );
   }
 
   /// T-Proj rule
   /// return Type of proj
   @override
-  StellaTypeReport visitDotRecord(DotRecordContext ctx) {
+  ConstraintStellaTypeReport visitDotRecord(DotRecordContext ctx) {
     final recordReport = ctx.expr_!.accept(this)!;
     final label = ctx.label!.text!;
 
     final recordType = recordReport.typeOrNull;
 
-    if (recordType is! TypeRecord?) {
-      return ErrorTypeReport(
+    if (recordType is! TypeRecord? && recordType is! TypeVar?) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.notARecord,
         message: 'Expected type Record, but got $recordType',
         cause: recordReport,
+        constrains: [],
       );
     }
 
-    if (recordReport is ErrorTypeReport) {
+    if (recordReport is ConstraintErrorTypeReport) {
       return recordReport.copyWith(
         typesContext: context.clone(),
-        recoveryType: recordType?.types[label],
+        recoveryType: recordType?.tryAs<TypeRecord>()?.types[label],
       );
     }
 
-    if (recordType != null && !recordType.isStrict) {
-      return ErrorTypeReport(
+    if (recordType is TypeRecord? &&
+        recordType != null &&
+        !recordType.isStrict) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.ambiguousType(recordType),
         message: 'Ambiguous type',
         cause: recordReport,
+        constrains: [],
       );
     }
 
-    if (!recordType!.types.containsKey(label)) {
-      return ErrorTypeReport(
+    if (recordType is TypeRecord && !recordType.types.containsKey(label)) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedFieldAccess,
         message: 'Missing field: $label in record $recordType',
         cause: recordReport,
+        constrains: [],
       );
     }
 
-    return GotTypeReport(
+    final typeVar = variableGenerator.nextVariable();
+
+    final type = recordType?.tryAs<TypeRecord>()?.types[label];
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
-      type: recordType.types[label]!,
+      type: type ?? typeVar,
+      constrains: recordReport.constrains.followedBy(
+        [
+          if (type == null)
+            _makeConstraint(
+              recordType,
+              TypeRecord(types: LinkedHashMap.from({label: typeVar})),
+            ),
+        ].whereType<Constraints>(),
+      ),
     );
   }
 
   /// T-Inl
   @override
-  StellaTypeReport visitInl(InlContext ctx) {
+  ConstraintStellaTypeReport visitInl(InlContext ctx) {
     final typeReport = ctx.expr_!.accept(this)!;
 
-    if (typeReport is ErrorTypeReport) {
+    if (typeReport is ConstraintErrorTypeReport) {
       return typeReport.copyWith(
         typesContext: context.clone(),
         recoveryType: TypeSum(left: typeReport.typeOrNull),
       );
     }
 
-    return GotTypeReport(
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
-      type: TypeSum(left: typeReport.typeOrNull),
+      type: TypeSum(
+        left: typeReport.typeOrNull,
+        right: variableGenerator.nextVariable(),
+      ),
+      constrains: typeReport.constrains,
     );
   }
 
   /// T-Inr
   @override
-  StellaTypeReport visitInr(InrContext ctx) {
+  ConstraintStellaTypeReport visitInr(InrContext ctx) {
     final typeReport = ctx.expr_!.accept(this)!;
 
-    if (typeReport is ErrorTypeReport) {
+    if (typeReport is ConstraintErrorTypeReport) {
       return typeReport.copyWith(
         typesContext: context.clone(),
         recoveryType: TypeSum(right: typeReport.typeOrNull),
       );
     }
 
-    return GotTypeReport(
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
-      type: TypeSum(right: typeReport.typeOrNull),
+      type: TypeSum(
+        left: variableGenerator.nextVariable(),
+        right: typeReport.typeOrNull,
+      ),
+      constrains: typeReport.constrains,
     );
   }
 
   /// T-Variant
   @override
-  StellaTypeReport visitVariant(VariantContext ctx) {
+  ConstraintStellaTypeReport visitVariant(VariantContext ctx) {
     final label = ctx.label!.text!;
     final expression = ctx.rhs?.accept(this);
 
-    if (expression is ErrorTypeReport) {
+    if (expression is ConstraintErrorTypeReport) {
       return expression.copyWith(
         typesContext: context.clone(),
         recoveryType: expression.let(
@@ -945,73 +1111,98 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
       );
     }
 
-    return GotTypeReport(
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
       type: TypeVariant(
         types: LinkedHashMap.fromIterables([label], [expression?.typeOrNull]),
         strict: false,
       ),
+      constrains: expression?.constrains ?? [],
     );
   }
 
   /// T-Fix
   @override
-  StellaTypeReport? visitFix(FixContext ctx) {
+  ConstraintStellaTypeReport? visitFix(FixContext ctx) {
     final funcReport = ctx.expr_?.accept(this);
 
-    if (funcReport is! GotTypeReport) {
+    if (funcReport is ConstraintErrorTypeReport) {
       return funcReport;
     }
 
-    final type = funcReport.type;
-    if (type is! Func) {
-      return ErrorTypeReport(
+    final type = funcReport!.typeOrNull!;
+    if (type is! Func && type is! TypeVar) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.notAFunction,
         message: 'Can`t apply fix, to not a function type',
+        constrains: [],
       );
     }
 
-    if (type.args.length != 1) {
-      return ErrorTypeReport(
+    if (type is Func && type.args.length != 1) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.incorrectNumberOfArguments,
         message: 'Expect 1 args, but got ${type.args.length}',
+        constrains: [],
       );
     }
 
-    final expectedType = type.args.single;
+    StellaType expectedType;
+    if (type is Func) {
+      expectedType = type.args.single;
 
-    if (!funcReport.hasType(expectedType >> expectedType)) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedExpression(
-          context: context,
-          expected: expectedType >> expectedType,
-          actual: type,
-        ),
-        message: 'Can`t apply fix, to bad function type',
-      );
+      if (!funcReport.hasType(expectedType >> expectedType)) {
+        return ConstraintErrorTypeReport(
+          typesContext: context.clone(),
+          errorCode: StellaTypeError.unexpectedExpression(
+            context: context,
+            expected: expectedType >> expectedType,
+            actual: type,
+          ),
+          message: 'Can`t apply fix, to bad function type',
+          constrains: [],
+        );
+      }
+    } else {
+      expectedType = variableGenerator.nextVariable();
     }
 
-    return GotTypeReport(typesContext: context.clone(), type: expectedType);
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: expectedType,
+      constrains: funcReport.constrains.followedBy(
+        [
+          if (funcReport.typeOrNull is! Func)
+            _makeConstraint(
+              funcReport.typeOrNull,
+              expectedType >> expectedType,
+            ),
+        ].whereType<Constraints>(),
+      ),
+    );
   }
 
   @override
-  StellaTypeReport? visitList(ListContext ctx) {
+  ConstraintStellaTypeReport? visitList(ListContext ctx) {
     final exprReport = ctx.exprs
         .map((exp) => exp.accept(this))
-        .whereType<StellaTypeReport>()
+        .whereType<ConstraintStellaTypeReport>()
         .toList();
 
-    if (exprReport.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+    if (exprReport.whereType<ConstraintErrorTypeReport>().firstOrNull
+        case final error?) {
       return error.copyWith(typesContext: context, recoveryType: TypeList());
     }
 
-    final typeSet = exprReport.map((e) => e.typeOrNull).toSet();
+    final typeSet = exprReport
+        .map((e) => e.typeOrNull)
+        .where((t) => t is! TypeVar)
+        .toSet();
 
     if (typeSet.length > 1) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
           context: context,
@@ -1019,28 +1210,38 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           actual: typeSet.last,
         ),
         message: 'Ambiguous type',
+        constrains: [],
       );
     }
 
-    return GotTypeReport(
+    final type = typeSet.singleOrNull ?? variableGenerator.nextVariable();
+
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
-      type: TypeList(type: typeSet.firstOrNull),
+      type: TypeList(type: type),
+      constrains: exprReport
+          .expand((t) => t.constrains)
+          .followedBy(
+            [
+              for (final t in typeSet) _makeConstraint(type, t),
+            ].whereType<Constraints>(),
+          ),
     );
   }
 
   @override
-  StellaTypeReport? visitConsList(ConsListContext ctx) {
+  ConstraintStellaTypeReport? visitConsList(ConsListContext ctx) {
     final headReport = ctx.head!.accept(this)!;
     final tailReport = ctx.tail!.accept(this)!;
 
-    if (headReport is ErrorTypeReport) {
+    if (headReport is ConstraintErrorTypeReport) {
       return headReport.copyWith(
         typesContext: context,
         recoveryType: TypeList(type: headReport.typeOrNull),
       );
     }
 
-    if (tailReport is ErrorTypeReport) {
+    if (tailReport is ConstraintErrorTypeReport) {
       return tailReport.copyWith(
         typesContext: context,
         recoveryType: TypeList(type: headReport.typeOrNull),
@@ -1048,7 +1249,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     }
 
     if (!tailReport.hasType(TypeList(type: headReport.typeOrNull))) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
           context: context,
@@ -1056,108 +1257,154 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           actual: tailReport.typeOrNull,
         ),
         message: 'Ambiguous type of list',
+        constrains: [],
       );
     }
 
-    return GotTypeReport(
+    final typeOfList = headReport.typeOrNull;
+    final type = typeOfList ?? variableGenerator.nextVariable();
+
+    return ConstraintGotTypeReport(
       typesContext: context.clone(),
-      type: TypeList(type: headReport.typeOrNull),
+      type: TypeList(type: type),
+      constrains: headReport.constrains
+          .followedBy(tailReport.constrains)
+          .followedBy(
+            [
+              _makeConstraint(tailReport.typeOrNull, TypeList(type: type)),
+            ].whereType<Constraints>(),
+          ),
     );
   }
 
   @override
-  StellaTypeReport? visitHead(HeadContext ctx) {
+  ConstraintStellaTypeReport? visitHead(HeadContext ctx) {
     final listReport = ctx.list!.accept(this)!;
 
     StellaType? listType = listReport.typeOrNull;
     final ts = TypeSystem.of(context);
     listType = ts.resolveAmbiguousType(listType);
 
-    if (listType is! TypeList?) {
-      return ErrorTypeReport(
+    if (listType is! TypeList? && listType is! TypeVar?) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.notAList,
         message: 'Not a list',
+        constrains: [],
       );
     }
 
-    if (listReport is ErrorTypeReport) {
+    if (listReport is ConstraintErrorTypeReport) {
       return listReport.copyWith(
         typesContext: context.clone(),
-        recoveryType: listType?.type,
+        recoveryType: listType?.tryAs<TypeList>()?.type,
       );
     }
 
-    if (listType?.type == null) {
-      return ErrorTypeReport(
+    if (listType is TypeList? && listType?.type == null) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.ambiguousList,
         message: 'Ambiguous type',
+        constrains: [],
       );
     }
 
-    return GotTypeReport(typesContext: context.clone(), type: listType!.type!);
+    final typeOfList = listType?.tryAs<TypeList>()?.type;
+    final type = typeOfList ?? variableGenerator.nextVariable();
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: type,
+      constrains: listReport.constrains.followedBy(
+        [
+          _makeConstraint(listType, TypeList(type: type)),
+        ].whereType<Constraints>(),
+      ),
+    );
   }
 
   @override
-  StellaTypeReport? visitTail(TailContext ctx) {
+  ConstraintStellaTypeReport? visitTail(TailContext ctx) {
     final listReport = ctx.list!.accept(this)!;
 
     StellaType? listType = listReport.typeOrNull;
     final ts = TypeSystem.of(context);
     listType = ts.resolveAmbiguousType(listType);
 
-    if (listType is! TypeList?) {
-      return ErrorTypeReport(
+    if (listType is! TypeList? && listType is! TypeVar) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.notAList,
         message: 'Not a list',
+        constrains: [],
       );
     }
 
-    if (listReport is ErrorTypeReport) {
+    if (listReport is ConstraintErrorTypeReport) {
       return listReport.copyWith(
         typesContext: context.clone(),
         recoveryType: listType,
       );
     }
 
-    if (listType?.type == null) {
-      return ErrorTypeReport(
+    if (listType is TypeList && listType.type == null) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.ambiguousList,
         message: 'Ambiguous type',
+        constrains: [],
       );
     }
 
-    return GotTypeReport(typesContext: context.clone(), type: listType!);
+    StellaType? typeOfList = listType?.tryAs<TypeList>()?.type;
+    final type = typeOfList ?? variableGenerator.nextVariable();
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: TypeList(type: type),
+      constrains: listReport.constrains.followedBy(
+        [
+          _makeConstraint(listType, TypeList(type: type)),
+        ].whereType<Constraints>(),
+      ),
+    );
   }
 
   @override
-  StellaTypeReport? visitIsEmpty(IsEmptyContext ctx) {
+  ConstraintStellaTypeReport? visitIsEmpty(IsEmptyContext ctx) {
     final listReport = ctx.list!.accept(this)!;
 
     final listType = listReport.typeOrNull;
-    if (listType is! TypeList?) {
-      return ErrorTypeReport(
+    if (listType is! TypeList? && listType is! TypeVar) {
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.notAList,
         message: 'Not a list',
+        constrains: [],
       );
     }
 
-    if (listReport is ErrorTypeReport) {
+    if (listReport is ConstraintErrorTypeReport) {
       return listReport.copyWith(
         typesContext: context.clone(),
         recoveryType: const Bool(),
       );
     }
 
-    return GotTypeReport(typesContext: context.clone(), type: const Bool());
+    StellaType? typeOfList = listType?.tryAs<TypeList>()?.type;
+    final type = typeOfList ?? variableGenerator.nextVariable();
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: const Bool(),
+      constrains: listReport.constrains.followedBy(
+        [
+          _makeConstraint(listType, TypeList(type: type)),
+        ].whereType<Constraints>(),
+      ),
+    );
   }
 
   @override
-  StellaTypeReport? visitTypeAsc(TypeAscContext ctx) {
+  ConstraintStellaTypeReport? visitTypeAsc(TypeAscContext ctx) {
     final expression = ctx.expr_!.accept(this)!;
     final type = ctx.type_!.accept(this)!;
 
@@ -1170,7 +1417,7 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     }
 
     if (!expression.hasType(type.typeOrNull!)) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedExpression(
           context: context,
@@ -1178,14 +1425,25 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           actual: type.typeOrNull,
         ),
         message: 'Bad cast',
+        constrains: [],
       );
     }
 
-    return GotTypeReport(typesContext: context.clone(), type: type.typeOrNull!);
+    return ConstraintGotTypeReport(
+      typesContext: context.clone(),
+      type: type.typeOrNull!,
+      constrains: expression.constrains
+          .followedBy(type.constrains)
+          .followedBy(
+            [
+              _makeConstraint(expression.typeOrNull, type.typeOrNull),
+            ].whereType<Constraints>(),
+          ),
+    );
   }
 
   @override
-  StellaTypeReport? visitMatch(MatchContext ctx) {
+  ConstraintStellaTypeReport? visitMatch(MatchContext ctx) {
     final expr = ctx.expr_!.accept(this)!;
 
     StellaType? type = expr.typeOrNull;
@@ -1193,11 +1451,12 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
     type = ts.resolveAmbiguousType(type);
 
     if (type != null && !type.isStrict) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.ambiguousType(type),
         message: 'Ambiguous type',
         cause: expr,
+        constrains: [],
       );
     }
 
@@ -1211,22 +1470,24 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           .toList();
 
       if (patterns.isEmpty) {
-        return ErrorTypeReport(
+        return ConstraintErrorTypeReport(
           typesContext: context.clone(),
           errorCode: StellaTypeError.illegalEmptyMatching,
+          constrains: [],
         );
       }
 
       final checker = StellaPatternChecker.forType(type);
 
       if (!checker.checkExhaustive(patterns)) {
-        return ErrorTypeReport(
+        return ConstraintErrorTypeReport(
           typesContext: context.clone(),
           errorCode: StellaTypeError.nonExhaustiveMatchPatterns,
+          constrains: [],
         );
       }
 
-      List<StellaTypeReport> expr =
+      List<ConstraintStellaTypeReport> expr =
           ZipIterable(patterns, ctx.cases.map((c) => c.expr_))
               .map((z) {
                 return withContext((context) {
@@ -1235,70 +1496,81 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
                   return z.$2!.accept(this)!;
                 });
               })
-              .whereType<StellaTypeReport>()
+              .whereType<ConstraintStellaTypeReport>()
               .toList();
 
-      if (expr.whereType<ErrorTypeReport>().firstOrNull case final error?) {
+      if (expr.whereType<ConstraintErrorTypeReport>().firstOrNull
+          case final error?) {
         return error;
       }
 
       expr = expr
-          .whereType<GotTypeReport>()
+          .whereType<ConstraintGotTypeReport>()
           .map((r) {
-            return GotTypeReport(
+            return ConstraintGotTypeReport(
               typesContext: r.typesContext,
               type: ts.resolveAmbiguousType(r.type)!,
             );
           })
-          .cast<StellaTypeReport>()
+          .cast<ConstraintStellaTypeReport>()
           .toList();
 
       if (expr.firstWhereOrNull((e) => !(e.typeOrNull?.isStrict ?? true))
           case final error?) {
-        return ErrorTypeReport(
+        return ConstraintErrorTypeReport(
           typesContext: context.clone(),
           errorCode: StellaTypeError.ambiguousType(error.typeOrNull!),
           message: 'Ambiguous type',
+          constrains: [],
         );
       }
 
       final clone = context.clone();
-      return expr.reduce((a, b) => a.inferTypeReport(b, clone));
-    } on ErrorTypeReport catch (report) {
+      final report = expr.reduce((a, b) => a.inferTypeReport(b, clone));
+      return report.copyWith(
+        constrains: [
+          // todo constrains
+        ],
+      );
+    } on ConstraintErrorTypeReport catch (report) {
       return report;
     } on StateError catch (error) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.duplicateRecordPatternFields,
         message: error.message,
         cause: expr,
+        constrains: [],
       );
     } on UnsupportedError catch (error) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedNonNullableVariantPattern,
         message: error.message,
         cause: expr,
+        constrains: [],
       );
     } on RangeError catch (error) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedNullableVariantPattern,
         message: error.message,
         cause: expr,
+        constrains: [],
       );
     } on ArgumentError catch (error) {
-      return ErrorTypeReport(
+      return ConstraintErrorTypeReport(
         typesContext: context.clone(),
         errorCode: StellaTypeError.unexpectedPatternForType,
         message: error.message,
         cause: expr,
+        constrains: [],
       );
     }
   }
 
   @override
-  StellaTypeReport? visitLet(LetContext ctx) {
+  ConstraintStellaTypeReport? visitLet(LetContext ctx) {
     return withContext((context) {
       try {
         final patterns = ctx.patternBinds.map((c) {
@@ -1313,10 +1585,11 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
           type = ts.resolveAmbiguousType(type);
 
           if (type?.isStrict case false) {
-            throw ErrorTypeReport(
+            throw ConstraintErrorTypeReport(
               typesContext: context.clone(),
               errorCode: StellaTypeError.ambiguousType(type!),
               message: 'Ambiguous type',
+              constrains: [],
             );
           }
 
@@ -1325,9 +1598,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         }).toList();
 
         if (patterns.isEmpty) {
-          return ErrorTypeReport(
+          return ConstraintErrorTypeReport(
             typesContext: context.clone(),
             errorCode: StellaTypeError.illegalEmptyMatching,
+            constrains: [],
           );
         }
         final clone = context.clone();
@@ -1342,9 +1616,10 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         final checker = StellaPatternChecker.forType(typeRes.typeOrNull!);
 
         if (!checker.checkExhaustive(patterns.secondComponent.toList())) {
-          return ErrorTypeReport(
+          return ConstraintErrorTypeReport(
             typesContext: context.clone(),
             errorCode: StellaTypeError.nonExhaustiveMatchPatterns,
+            constrains: [],
           );
         }
 
@@ -1354,434 +1629,62 @@ class StellaTypeVisitor extends StellaParserBaseVisitor<StellaTypeReport> {
         context.add(innerContext);
 
         return ctx.body!.accept(this)!;
-      } on ErrorTypeReport catch (report) {
+      } on ConstraintErrorTypeReport catch (report) {
         return report;
       } on StateError catch (error) {
-        return ErrorTypeReport(
+        return ConstraintErrorTypeReport(
           typesContext: context.clone(),
           errorCode: StellaTypeError.duplicateRecordPatternFields,
           message: error.message,
+          constrains: [],
         );
       } on UnsupportedError catch (error) {
-        return ErrorTypeReport(
+        return ConstraintErrorTypeReport(
           typesContext: context.clone(),
           errorCode: StellaTypeError.unexpectedNonNullableVariantPattern,
           message: error.message,
+          constrains: [],
         );
       } on RangeError catch (error) {
-        return ErrorTypeReport(
+        return ConstraintErrorTypeReport(
           typesContext: context.clone(),
           errorCode: StellaTypeError.unexpectedNullableVariantPattern,
           message: error.message,
+          constrains: [],
         );
       } on ArgumentError catch (error) {
-        return ErrorTypeReport(
+        return ConstraintErrorTypeReport(
           typesContext: context.clone(),
           errorCode: StellaTypeError.unexpectedPatternForType,
           message: error.message,
+          constrains: [],
         );
       } on Object {
-        return ErrorTypeReport(
+        return ConstraintErrorTypeReport(
           typesContext: context.clone(),
           errorCode: StellaTypeError.ambiguousPatternType,
+          constrains: [],
         );
       }
     });
   }
 
   @override
-  StellaTypeReport? visitLetRec(LetRecContext ctx) {
-    return withContext((context) {
-      try {
-        final patterns = ctx.patternBinds
-            .map((c) => c.pat!.accept(StellaPatternVisitor())!)
-            .toList();
-
-        if (patterns.isEmpty) {
-          return ErrorTypeReport(
-            typesContext: context.clone(),
-            errorCode: StellaTypeError.illegalEmptyMatching,
-          );
-        }
-
-        if (patterns.map((p) => p.patternType).toSet().length != 1) {
-          // TODO: cover with tests
-          return ErrorTypeReport(
-            typesContext: context.clone(),
-            errorCode: StellaTypeError.unexpectedPatternForType,
-            message: 'Can`t get pattern type',
-          );
-        }
-
-        final expressions = ZipIterable(ctx.patternBinds, patterns).map(
-          (ctx) => withContext((context) {
-            context.add(ctx.$2.patternContext);
-            return ctx.$1.rhs!.accept(this)!;
-          })!,
-        );
-
-        if (expressions.whereType<ErrorTypeReport>().firstOrNull
-            case final error?) {
-          return error;
-        }
-
-        final clone = context.clone();
-        final typeRes = expressions.reduce(
-          (a, b) => a.inferTypeReport(b, clone),
-        );
-
-        if (typeRes is ErrorTypeReport) {
-          throw typeRes;
-        }
-
-        final checker = StellaPatternChecker.forType(typeRes.typeOrNull!);
-
-        if (!checker.checkExhaustive(patterns.toList())) {
-          return ErrorTypeReport(
-            typesContext: context.clone(),
-            errorCode: StellaTypeError.nonExhaustiveMatchPatterns,
-          );
-        }
-
-        final innerContext = patterns
-            .map((p) => p.patternContext)
-            .reduce((a, b) => a.merge(b));
-        context.add(innerContext);
-
-        return ctx.body!.accept(this)!;
-      } on ErrorTypeReport catch (report) {
-        return report;
-      } on StateError catch (error) {
-        return ErrorTypeReport(
-          typesContext: context.clone(),
-          errorCode: StellaTypeError.duplicateRecordPatternFields,
-          message: error.message,
-        );
-      } on UnsupportedError catch (error) {
-        return ErrorTypeReport(
-          typesContext: context.clone(),
-          errorCode: StellaTypeError.unexpectedNonNullableVariantPattern,
-          message: error.message,
-        );
-      } on RangeError catch (error) {
-        return ErrorTypeReport(
-          typesContext: context.clone(),
-          errorCode: StellaTypeError.unexpectedNullableVariantPattern,
-          message: error.message,
-        );
-      } on ArgumentError catch (error) {
-        return ErrorTypeReport(
-          typesContext: context.clone(),
-          errorCode: StellaTypeError.unexpectedPatternForType,
-          message: error.message,
-        );
-      } on Object {
-        return ErrorTypeReport(
-          typesContext: context.clone(),
-          errorCode: StellaTypeError.ambiguousPatternType,
-        );
-      }
-    });
-  }
-
-  @override
-  StellaTypeReport? visitParenthesisedExpr(ParenthesisedExprContext ctx) {
+  ConstraintStellaTypeReport? visitParenthesisedExpr(
+    ParenthesisedExprContext ctx,
+  ) {
     return ctx.expr_?.accept(this);
   }
 
-  @override
-  StellaTypeReport? visitConstMemory(ConstMemoryContext ctx) {
-    return GotTypeReport(
-      typesContext: context.clone(),
-      type: const ConstMemory(),
-    );
-  }
-
-  @override
-  StellaTypeReport? visitRef(RefContext ctx) {
-    final typeReport = ctx.expr_!.accept(this)!;
-
-    if (typeReport is ErrorTypeReport) {
-      return typeReport.copyWith(
-        typesContext: context.clone(),
-        recoveryType: typeReport.typeOrNull?.let((type) => TypeRef(type: type)),
-      );
+  Constraints? _makeConstraint(StellaType? lhs, StellaType? rhs) {
+    if (lhs == null || rhs == null) {
+      return null;
     }
 
-    return GotTypeReport(
-      typesContext: context.clone(),
-      type: TypeRef(type: typeReport.typeOrNull!),
-    );
-  }
-
-  @override
-  StellaTypeReport? visitDeref(DerefContext ctx) {
-    final refReport = ctx.expr_!.accept(this)!;
-    final addressType = refReport.typeOrNull;
-
-    if (refReport is ErrorTypeReport) {
-      return refReport.copyWith(
-        typesContext: context.clone(),
-        recoveryType: addressType?.tryAs<TypeRef>()?.let((ref) => ref.type),
-      );
+    if (lhs == rhs) {
+      return null;
     }
 
-    if (addressType is! TypeReference) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.notAReference,
-        message: 'Expected reference, but got: $addressType',
-      );
-    }
-
-    StellaType? refType = addressType.type;
-    final ts = TypeSystem.of(context);
-    refType = ts.resolveAmbiguousType(refType);
-
-    if (refType != null && !refType.isStrict) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.ambiguousType(addressType),
-      );
-    }
-
-    return GotTypeReport(
-      typesContext: context.clone(),
-      type: refType ?? RowMemory(),
-    );
-  }
-
-  @override
-  StellaTypeReport? visitAssign(AssignContext ctx) {
-    final refReport = ctx.lhs!.accept(this)!;
-    final addressType = refReport.typeOrNull;
-
-    if (refReport is ErrorTypeReport) {
-      return refReport.copyWith(
-        typesContext: context.clone(),
-        recoveryType: const Unit(),
-      );
-    }
-
-    if (addressType is! TypeReference) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.notAReference,
-        message: 'Expected reference, but got: $addressType',
-      );
-    }
-    StellaType? refType = addressType.type;
-    final ts = TypeSystem.of(context);
-    refType = ts.resolveAmbiguousType(refType);
-
-    if (refType == null || !addressType.isStrict) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.ambiguousType(addressType),
-      );
-    }
-
-    final exprReport = ctx.rhs!.accept(this)!;
-
-    if (!exprReport.hasType(refType)) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedExpression(
-          context: context,
-          expected: refType,
-          actual: exprReport.typeOrNull,
-        ),
-        message: 'Expected type $addressType, but got ${exprReport.typeOrNull}',
-        cause: exprReport,
-        recoveryType: const Unit(),
-      );
-    }
-
-    return GotTypeReport(typesContext: context.clone(), type: const Unit());
-  }
-
-  @override
-  StellaTypeReport? visitPanic(PanicContext ctx) {
-    return GotTypeReport(typesContext: context.clone(), type: const Panic());
-  }
-
-  @override
-  StellaTypeReport? visitThrow(ThrowContext ctx) {
-    final exprReport = ctx.expr_!.accept(this)!;
-
-    final exceptionType = context.exceptionContext.exceptionType;
-    if (exprReport is ErrorTypeReport) {
-      return exprReport.copyWith(
-        typesContext: context.clone(),
-        recoveryType: exprReport.typeOrNull ?? exceptionType,
-      );
-    }
-    StellaType? throwType = exprReport.typeOrNull;
-    final ts = TypeSystem.of(context);
-    throwType = ts.resolveAmbiguousType(throwType);
-
-    if (throwType == null ||
-        (throwType is! TypeVariant && !throwType.isStrict)) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.ambiguousThrowType,
-      );
-    }
-
-    if (!exprReport.hasType(exceptionType!)) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedExpression(
-          context: context,
-          expected: exceptionType,
-          actual: exprReport.typeOrNull,
-        ),
-        message:
-            'Expected type $exceptionType, but got ${exprReport.typeOrNull}',
-        cause: exprReport,
-        recoveryType: exceptionType,
-      );
-    }
-
-    return GotTypeReport(typesContext: context.clone(), type: Throw(throwType));
-  }
-
-  @override
-  StellaTypeReport? visitTryCatch(TryCatchContext ctx) {
-    final expr = ctx.tryExpr!.accept(this)!;
-
-    try {
-      final type = ctx.pat!.accept(
-        StellaPatternVisitor(context.exceptionContext.exceptionType),
-      )!;
-
-      return withContext((context) {
-        context.add(type.patternContext);
-
-        final fallback = ctx.fallbackExpr!.accept(this)!;
-
-        return expr.inferTypeReport(fallback, context.clone());
-      });
-    } on ErrorTypeReport catch (report) {
-      return report;
-    } on StateError catch (error) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.duplicateRecordPatternFields,
-        message: error.message,
-      );
-    } on UnsupportedError catch (error) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedNonNullableVariantPattern,
-        message: error.message,
-      );
-    } on RangeError catch (error) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedNullableVariantPattern,
-        message: error.message,
-      );
-    } on ArgumentError catch (error) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedPatternForType,
-        message: error.message,
-      );
-    } on Object {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.ambiguousPatternType,
-      );
-    }
-  }
-
-  @override
-  StellaTypeReport? visitTryWith(TryWithContext ctx) {
-    final expr = ctx.tryExpr!.accept(this)!;
-
-    final fallback = ctx.fallbackExpr!.accept(this)!;
-
-    return expr.inferTypeReport(fallback, context.clone());
-  }
-
-  @override
-  StellaTypeReport? visitTypeCast(TypeCastContext ctx) {
-    final expression = ctx.expr_!.accept(this)!;
-    final type = ctx.type_!.accept(this)!;
-
-    if (expression is ErrorTypeReport) {
-      return expression.copyWith(recoveryType: type.typeOrNull);
-    }
-
-    if (type is ErrorTypeReport) {
-      return type;
-    }
-
-    return GotTypeReport(typesContext: context.clone(), type: type.typeOrNull!);
-  }
-
-  @override
-  StellaTypeReport? visitTryCastAs(TryCastAsContext ctx) {
-    final expression = ctx.tryExpr!.accept(this)!;
-    final type = ctx.type_!.accept(this)!;
-    final fallback = ctx.fallbackExpr!.accept(this)!;
-
-    if (expression is ErrorTypeReport) {
-      return expression;
-    }
-
-    if (type is ErrorTypeReport) {
-      return type;
-    }
-
-    if (type is ErrorTypeReport) {
-      return type;
-    }
-
-    try {
-      final patType = ctx.pattern_!.accept(
-        StellaPatternVisitor(type.typeOrNull),
-      )!;
-
-      return withContext((context) {
-        context.add(patType.patternContext);
-
-        final expr = ctx.expr_!.accept(this)!;
-
-        return expr.inferTypeReport(fallback, context.clone());
-      });
-    } on ErrorTypeReport catch (report) {
-      return report;
-    } on StateError catch (error) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.duplicateRecordPatternFields,
-        message: error.message,
-      );
-    } on UnsupportedError catch (error) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedNonNullableVariantPattern,
-        message: error.message,
-      );
-    } on RangeError catch (error) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedNullableVariantPattern,
-        message: error.message,
-      );
-    } on ArgumentError catch (error) {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.unexpectedPatternForType,
-        message: error.message,
-      );
-    } on Object {
-      return ErrorTypeReport(
-        typesContext: context.clone(),
-        errorCode: StellaTypeError.ambiguousPatternType,
-      );
-    }
+    return Constraints(lhs: lhs, rhs: rhs);
   }
 }

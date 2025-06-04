@@ -1,18 +1,15 @@
 import 'package:collection/collection.dart';
+import 'package:satchel/src/type_checker/model/constraints.dart';
 
 import '../types/type_system.dart';
 import '../../util/extensions.dart';
 import 'stella_types.dart';
 import 'stella_types_context.dart';
 
-sealed class StellaTypeReport {
-  final IStellaTypesContext typesContext;
-  final TypeSystem typeSystem;
+abstract interface class StellaTypeReport {
+  IStellaTypesContext get typesContext;
 
-  const StellaTypeReport({
-    required this.typesContext,
-    required this.typeSystem,
-  });
+  TypeSystem get typeSystem;
 
   bool hasType(StellaType type);
 
@@ -24,7 +21,44 @@ sealed class StellaTypeReport {
   );
 }
 
-class GotTypeReport extends StellaTypeReport {
+sealed class BaseStellaTypeReport implements StellaTypeReport {
+  @override
+  final IStellaTypesContext typesContext;
+  @override
+  final TypeSystem typeSystem;
+
+  const BaseStellaTypeReport({
+    required this.typesContext,
+    required this.typeSystem,
+  });
+
+  @override
+  bool hasType(StellaType type);
+
+  @override
+  StellaType? get typeOrNull;
+
+  @override
+  StellaTypeReport inferTypeReport(
+    StellaTypeReport typeReport,
+    IStellaTypesContext ctx,
+  );
+}
+
+abstract interface class ConstraintStellaTypeReport
+    implements StellaTypeReport {
+  Iterable<Constraints> get constrains;
+
+  @override
+  ConstraintStellaTypeReport inferTypeReport(
+    StellaTypeReport typeReport,
+    IStellaTypesContext ctx,
+  );
+
+  ConstraintStellaTypeReport copyWith({Iterable<Constraints>? constrains});
+}
+
+base class GotTypeReport extends BaseStellaTypeReport {
   final StellaType type;
 
   factory GotTypeReport({
@@ -68,16 +102,17 @@ class GotTypeReport extends StellaTypeReport {
 
     final resType = switch ((type, typeReport.typeOrNull)) {
       final (TypeSum, TypeSum) sums => TypeSum(
-          left: sums.$1.left ?? sums.$2.left,
-          right: sums.$1.right ?? sums.$2.right,
-        ),
-      final (TypeVariant, TypeVariant) sums => TypeVariant.merge(
-          [sums.$1, sums.$2],
-        ),
+        left: sums.$1.left ?? sums.$2.left,
+        right: sums.$1.right ?? sums.$2.right,
+      ),
+      final (TypeVariant, TypeVariant) sums => TypeVariant.merge([
+        sums.$1,
+        sums.$2,
+      ]),
       final (TypeReference, TypeReference) refs => TypeReference.merge(
-          refs.$1,
-          refs.$2,
-        ),
+        refs.$1,
+        refs.$2,
+      ),
       final (Panic, StellaType) withPanic => withPanic.$2,
       final (StellaType, Panic) panicWith => panicWith.$1,
       final (Throw, StellaType) withThrow => withThrow.$2,
@@ -86,16 +121,10 @@ class GotTypeReport extends StellaTypeReport {
     };
 
     if (typeReport is ErrorTypeReport) {
-      return typeReport.copyWith(
-        typesContext: ctx,
-        recoveryType: resType,
-      );
+      return typeReport.copyWith(typesContext: ctx, recoveryType: resType);
     }
 
-    return GotTypeReport(
-      typesContext: ctx,
-      type: resType,
-    );
+    return GotTypeReport(typesContext: ctx, type: resType);
   }
 
   @override
@@ -104,6 +133,109 @@ class GotTypeReport extends StellaTypeReport {
   @override
   String toString() {
     return 'GotTypeReport{type: $type}';
+  }
+}
+
+final class ConstraintGotTypeReport extends GotTypeReport
+    implements ConstraintStellaTypeReport {
+  @override
+  final Iterable<Constraints> constrains;
+
+  factory ConstraintGotTypeReport({
+    required IStellaTypesContext typesContext,
+    required StellaType type,
+    Iterable<Constraints> constrains = const [],
+  }) {
+    return ConstraintGotTypeReport._(
+      typesContext: typesContext,
+      typeSystem: TypeSystem.of(typesContext),
+      type: type,
+      constrains: constrains,
+    );
+  }
+
+  const ConstraintGotTypeReport._({
+    required super.typesContext,
+    required super.type,
+    required super.typeSystem,
+    required this.constrains,
+  }) : super._();
+
+  @override
+  ConstraintStellaTypeReport inferTypeReport(
+    StellaTypeReport typeReport,
+    IStellaTypesContext ctx,
+  ) {
+    if (!typeReport.hasType(type)) {
+      return ConstraintErrorTypeReport(
+        typesContext: typesContext,
+        cause: typeReport,
+        message: 'Expect $type, but got ${typeReport.typeOrNull}.',
+        errorCode: StellaTypeError.unexpectedExpression(
+          context: ctx,
+          expected: type,
+          actual: typeReport.typeOrNull,
+        ),
+        recoveryType: type,
+        constrains:
+            typeReport.tryAs<ConstraintStellaTypeReport>()?.let(
+              (c) => c.constrains.followedBy(constrains),
+            ) ??
+            constrains,
+      );
+    }
+
+    // todo type var priority
+    final resType = switch ((type, typeReport.typeOrNull)) {
+      final (TypeSum, TypeSum) sums => TypeSum(
+        left: sums.$1.left ?? sums.$2.left,
+        right: sums.$1.right ?? sums.$2.right,
+      ),
+      final (TypeVariant, TypeVariant) sums => TypeVariant.merge([
+        sums.$1,
+        sums.$2,
+      ]),
+      final (TypeReference, TypeReference) refs => TypeReference.merge(
+        refs.$1,
+        refs.$2,
+      ),
+      final (Panic, StellaType) withPanic => withPanic.$2,
+      final (StellaType, Panic) panicWith => panicWith.$1,
+      final (Throw, StellaType) withThrow => withThrow.$2,
+      final (StellaType, Throw) throwWith => throwWith.$1,
+      _ => type,
+    };
+
+    if (typeReport is ConstraintErrorTypeReport) {
+      return typeReport.copyWith(
+        typesContext: ctx,
+        recoveryType: resType,
+        constrains:
+            typeReport.tryAs<ConstraintStellaTypeReport>()?.let(
+              (c) => c.constrains.followedBy(constrains),
+            ) ??
+            constrains,
+      );
+    }
+
+    return ConstraintGotTypeReport(
+      typesContext: ctx,
+      type: resType,
+      constrains:
+          typeReport.tryAs<ConstraintStellaTypeReport>()?.let(
+            (c) => c.constrains.followedBy(constrains),
+          ) ??
+          constrains,
+    );
+  }
+
+  @override
+  ConstraintStellaTypeReport copyWith({Iterable<Constraints>? constrains}) {
+    return ConstraintGotTypeReport(
+      typesContext: typesContext,
+      type: type,
+      constrains: constrains ?? this.constrains,
+    );
   }
 }
 
@@ -148,9 +280,11 @@ enum StellaTypeError implements Exception {
   unexpectedVariant('ERROR_UNEXPECTED_VARIANT'),
   unexpectedVariantLabel('ERROR_UNEXPECTED_VARIANT_LABEL'),
   duplicateVariantTypeFields('ERROR_DUPLICATE_VARIANT_TYPE_FIELDS'),
+  errorOccursCheckInfiniteType ('ERROR_OCCURS_CHECK_INFINITE_TYPE'),
   incorrectNumberOfArguments('ERROR_INCORRECT_NUMBER_OF_ARGUMENTS'),
   unexpectedNonNullableVariantPattern(
-      'ERROR_UNEXPECTED_NON_NULLARY_VARIANT_PATTERN'),
+    'ERROR_UNEXPECTED_NON_NULLARY_VARIANT_PATTERN',
+  ),
   unexpectedNullableVariantPattern('ERROR_UNEXPECTED_NULLARY_VARIANT_PATTERN'),
   unexpectedNumberOfParametersInLambda(
     'ERROR_UNEXPECTED_NUMBER_OF_PARAMETERS_IN_LAMBDA',
@@ -167,8 +301,9 @@ enum StellaTypeError implements Exception {
     final hasSubtypes = context.languageFeatures.contains(
       LanguageFeatures.subtyping,
     );
-    final defaultError =
-        hasSubtypes ? unexpectedSubType : unexpectedTypeForExpression;
+    final defaultError = hasSubtypes
+        ? unexpectedSubType
+        : unexpectedTypeForExpression;
     final ts = TypeSystem.of(context);
 
     if ((expected, actual) case (TypeList(), TypeList())) {
@@ -272,19 +407,22 @@ enum StellaTypeError implements Exception {
       TypeList(:final type?) => StellaTypeError.ambiguousType(type),
       TypeList() => ambiguousList,
       TypeRef(:final type) => StellaTypeError.ambiguousType(type),
-      Func(:final args, :final returnType) => [...args, returnType]
-          .firstWhere((t) => !t.isStrict)
-          .let((type) => StellaTypeError.ambiguousType(type)),
+      Func(:final args, :final returnType) =>
+        [...args, returnType]
+            .firstWhere((t) => !t.isStrict)
+            .let((type) => StellaTypeError.ambiguousType(type)),
       TypeForAll(:final type) => StellaTypeError.ambiguousType(type),
       TypeRec(:final type) => StellaTypeError.ambiguousType(type),
-      TypeTuple(:final types) => types
-              .firstWhere((t) => !(t?.isStrict ?? false))
-              ?.let((type) => StellaTypeError.ambiguousType(type)) ??
-          unexpectedTypeForExpression,
-      TypeRecord(:final types) => types.values
-              .firstWhere((t) => !(t?.isStrict ?? false))
-              ?.let((type) => StellaTypeError.ambiguousType(type)) ??
-          unexpectedTypeForExpression,
+      TypeTuple(:final types) =>
+        types
+                .firstWhere((t) => !(t?.isStrict ?? false))
+                ?.let((type) => StellaTypeError.ambiguousType(type)) ??
+            unexpectedTypeForExpression,
+      TypeRecord(:final types) =>
+        types.values
+                .firstWhere((t) => !(t?.isStrict ?? false))
+                ?.let((type) => StellaTypeError.ambiguousType(type)) ??
+            unexpectedTypeForExpression,
       _ => unexpectedTypeForExpression,
     };
   }
@@ -295,7 +433,7 @@ enum StellaTypeError implements Exception {
   String toString() => code;
 }
 
-class ErrorTypeReport extends StellaTypeReport {
+class ErrorTypeReport extends BaseStellaTypeReport {
   final StellaTypeError errorCode;
   final String? message;
   @Deprecated('Use recovery type instead')
@@ -304,7 +442,6 @@ class ErrorTypeReport extends StellaTypeReport {
 
   factory ErrorTypeReport({
     required IStellaTypesContext typesContext,
-    StellaType? type,
     required StellaTypeError errorCode,
     String? message,
     @Deprecated('Use recovery type instead') StellaTypeReport? cause,
@@ -369,5 +506,76 @@ class ErrorTypeReport extends StellaTypeReport {
   @override
   String toString() {
     return 'ErrorTypeReport{errorCode: $errorCode, message: $message, cause: $cause, recoveryType: $recoveryType}';
+  }
+}
+
+class ConstraintErrorTypeReport extends ErrorTypeReport
+    implements ConstraintStellaTypeReport {
+  @override
+  final Iterable<Constraints> constrains;
+
+  factory ConstraintErrorTypeReport({
+    required IStellaTypesContext typesContext,
+    required StellaTypeError errorCode,
+    String? message,
+    @Deprecated('Use recovery type instead') StellaTypeReport? cause,
+    StellaType? recoveryType,
+    required Iterable<Constraints> constrains,
+  }) {
+    return ConstraintErrorTypeReport._(
+      typesContext: typesContext,
+      typeSystem: TypeSystem.of(typesContext),
+      errorCode: errorCode,
+      recoveryType: recoveryType,
+      message: message,
+      constrains: constrains,
+    );
+  }
+
+  const ConstraintErrorTypeReport._({
+    required super.typesContext,
+    required super.typeSystem,
+    required super.errorCode,
+    @Deprecated('Use recovery type instead') super.cause,
+    super.recoveryType,
+    super.message,
+    required this.constrains,
+  }) : super._();
+
+  @override
+  ConstraintErrorTypeReport copyWith({
+    IStellaTypesContext? typesContext,
+    StellaTypeError? errorCode,
+    String? message,
+    @Deprecated('Use recovery type instead') StellaTypeReport? cause,
+    StellaType? recoveryType,
+    Iterable<Constraints>? constrains,
+  }) {
+    return ConstraintErrorTypeReport(
+      typesContext: typesContext ?? this.typesContext,
+      errorCode: errorCode ?? this.errorCode,
+      message: message ?? this.message,
+      cause: cause ?? this.cause,
+      recoveryType: recoveryType ?? this.recoveryType,
+      constrains: constrains ?? this.constrains,
+    );
+  }
+
+  @override
+  ConstraintErrorTypeReport inferTypeReport(
+    StellaTypeReport typeReport,
+    IStellaTypesContext ctx,
+  ) {
+    return ConstraintErrorTypeReport(
+      typesContext: ctx,
+      cause: this,
+      errorCode: errorCode,
+      recoveryType: recoveryType,
+      constrains:
+          typeReport.tryAs<ConstraintStellaTypeReport>()?.let(
+            (c) => c.constrains.followedBy(constrains),
+          ) ??
+          constrains,
+    );
   }
 }

@@ -1,7 +1,6 @@
 import 'dart:collection';
 
 import 'package:collection/collection.dart';
-import 'package:satchel/src/type_checker/types/simple_type_system.dart';
 import 'package:satchel/src/type_checker/types/type_system.dart';
 import 'package:satchel/src/util/equality.dart';
 import 'package:satchel/src/util/extensions.dart';
@@ -242,8 +241,11 @@ class TypeTuple extends StellaType {
 
   final List<StellaType?> types;
 
+  final bool closed;
+
   const TypeTuple({
     required this.types,
+    this.closed = true,
   });
 
   @override
@@ -533,7 +535,7 @@ class Auto extends StellaType {
   int get hashCode => 6;
 }
 
-class TypeVar extends StellaType {
+final class TypeVar extends StellaType implements Wildcard {
   final String name;
 
   const TypeVar(this.name);
