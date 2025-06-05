@@ -14,6 +14,7 @@ import '../model/stella_type_report.dart';
 import '../model/stella_types.dart';
 import '../model/stella_types_context.dart';
 import '../types/variable_generator.dart';
+import 'stella_reconstruction_pattern_visitor.dart';
 
 typedef ContextConstraintBuilder =
     ConstraintStellaTypeReport? Function(IStellaTypesContextBuilder);
@@ -1466,7 +1467,10 @@ class StellaReconstructionTypeVisitor
 
     try {
       final patterns = ctx.cases
-          .map((c) => c.pattern_!.accept(StellaPatternVisitor(type))!)
+          .map(
+            (c) =>
+                c.pattern_!.accept(StellaReconstructionPatternVisitor(type))!,
+          )
           .toList();
 
       if (patterns.isEmpty) {
@@ -1593,7 +1597,9 @@ class StellaReconstructionTypeVisitor
             );
           }
 
-          final pattern = c.pat!.accept(StellaPatternVisitor(type))!;
+          final pattern = c.pat!.accept(
+            StellaReconstructionPatternVisitor(type),
+          )!;
           return (expr, pattern);
         }).toList();
 
