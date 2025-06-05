@@ -34,10 +34,7 @@ class IdentifierPattern
   @override
   final StellaTypesContext patternContext;
 
-  IdentifierPattern(
-    this.name,
-    this.patternContext,
-  );
+  IdentifierPattern(this.name, this.patternContext);
 
   @override
   bool get wildCard => true;
@@ -279,9 +276,9 @@ class _RecordStellaPattern implements RecordStellaPattern {
 
   @override
   StellaTypesContext get patternContext => patterns.values.fold(
-        StellaTypesContext(),
-        (ctx, b) => ctx.merge(b.patternContext),
-      );
+    StellaTypesContext(),
+    (ctx, b) => ctx.merge(b.patternContext),
+  );
 
   @override
   bool get wildCard => patterns.values.every((e) => e.wildCard);
@@ -309,9 +306,9 @@ class ListListStellaPattern implements ListStellaPattern {
 
   @override
   StellaTypesContext get patternContext => patterns.fold(
-        StellaTypesContext(),
-        (ctx, b) => ctx.merge(b.patternContext),
-      );
+    StellaTypesContext(),
+    (ctx, b) => ctx.merge(b.patternContext),
+  );
 
   @override
   bool get wildCard => false;
@@ -337,10 +334,10 @@ class ConsListStellaPattern implements ListStellaPattern {
   ConsListStellaPattern(this.head, this.tail);
 
   @override
-  StellaTypesContext get patternContext => [head, tail].fold(
-        StellaTypesContext(),
-        (ctx, b) => ctx.merge(b.patternContext),
-      );
+  StellaTypesContext get patternContext => [
+    head,
+    tail,
+  ].fold(StellaTypesContext(), (ctx, b) => ctx.merge(b.patternContext));
 
   @override
   bool get wildCard => false;
@@ -404,11 +401,39 @@ abstract class StellaPatternChecker {
       // TypeRecord() => throw UnimplementedError(),
       TypeList() => _ListStellaPatternChecker(type),
       TypeVariant() => _VariantStellaPatternChecker(type),
+      TypeVar() => _AnyPatternChecker([
+        _BoolStellaPatternChecker(),
+        _NatStellaPatternChecker(),
+        _UnitStellaPatternChecker(),
+        _SumStellaPatternChecker(
+          TypeSum(left: TypeVar('name'), right: TypeVar('name')),
+        ),
+        _ListStellaPatternChecker(TypeList(type: TypeVar('name'))),
+        _VariantStellaPatternChecker(TypeVariant(types: LinkedHashMap())),
+        _WildCardStellaPatternChecker(),
+      ]),
       _ => _WildCardStellaPatternChecker(),
     };
   }
 
   bool checkExhaustive(List<StellaPattern> patterns);
+}
+
+class _AnyPatternChecker implements StellaPatternChecker {
+  final List<StellaPatternChecker> _checkers;
+
+  _AnyPatternChecker(this._checkers);
+
+  @override
+  bool checkExhaustive(List<StellaPattern> patterns) {
+    return _checkers.any((ch) {
+      try {
+        return ch.checkExhaustive(patterns);
+      } on Object {
+        return false;
+      }
+    });
+  }
 }
 
 class _WildCardStellaPatternChecker implements StellaPatternChecker {
@@ -467,9 +492,9 @@ class _ListStellaPatternChecker implements StellaPatternChecker {
       return true;
     }
 
-    final hasEmpty = patterns
-        .whereType<ListListStellaPattern>()
-        .any((pattern) => pattern.patterns.isEmpty);
+    final hasEmpty = patterns.whereType<ListListStellaPattern>().any(
+      (pattern) => pattern.patterns.isEmpty,
+    );
 
     final cons = patterns.whereType<ConsListStellaPattern>().toList();
 
@@ -479,10 +504,9 @@ class _ListStellaPatternChecker implements StellaPatternChecker {
 
     final groups = cons.groupListsBy((c) => c.head);
 
-    final headsExhaustive =
-        StellaPatternChecker.forType(type.type!).checkExhaustive(
-      groups.keys.toList(),
-    );
+    final headsExhaustive = StellaPatternChecker.forType(
+      type.type!,
+    ).checkExhaustive(groups.keys.toList());
 
     return hasEmpty &&
         headsExhaustive &&
@@ -507,8 +531,9 @@ class _VariantStellaPatternChecker implements StellaPatternChecker {
       return true;
     }
 
-    final labelGroups =
-        patterns.cast<_VariantStellaPattern>().groupListsBy((p) => p.label);
+    final labelGroups = patterns.cast<_VariantStellaPattern>().groupListsBy(
+      (p) => p.label,
+    );
 
     final containsAllKeys = const UnorderedIterableEquality().equals(
       labelGroups.keys,
@@ -519,8 +544,9 @@ class _VariantStellaPatternChecker implements StellaPatternChecker {
         labelGroups.entries.every(
           (e) =>
               type.types[e.key]?.let(
-                (it) => StellaPatternChecker.forType(it)
-                    .checkExhaustive(e.value.map((p) => p.pattern!).toList()),
+                (it) => StellaPatternChecker.forType(
+                  it,
+                ).checkExhaustive(e.value.map((p) => p.pattern!).toList()),
               ) ??
               true,
         );
@@ -554,16 +580,16 @@ class _TupleStellaPatternChecker implements StellaPatternChecker {
       List<StellaType> types,
     ) {
       if (tuples.any((p) => tuples.length == 1)) {
-        return StellaPatternChecker.forType(types.first)
-            .checkExhaustive(tuples.map((t) => t.first).toList());
+        return StellaPatternChecker.forType(
+          types.first,
+        ).checkExhaustive(tuples.map((t) => t.first).toList());
       }
 
       final groups = tuples.groupListsBy((p) => p.first);
 
-      final keyExhaustive =
-          StellaPatternChecker.forType(types.first).checkExhaustive(
-        groups.keys.toList(),
-      );
+      final keyExhaustive = StellaPatternChecker.forType(
+        types.first,
+      ).checkExhaustive(groups.keys.toList());
 
       return keyExhaustive &&
           groups.values
@@ -684,7 +710,9 @@ class _NatStellaPatternChecker implements StellaPatternChecker {
 
     return nats.any((n) => n.eval == 0) &&
         depths.isNotEmpty &&
-        Iterable.generate(depths.max, (i) => i + 1)
-            .every((e) => depths.contains(e));
+        Iterable.generate(
+          depths.max,
+          (i) => i + 1,
+        ).every((e) => depths.contains(e));
   }
 }
